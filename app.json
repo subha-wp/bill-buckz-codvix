@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "bill-buckz",
+    "name": "Bill Buckz",
     "slug": "bill-buckz",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.nextcoder.billbuckz"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +37,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d017513e-bcaf-4057-8b91-5d5feefdca3d"
+      }
     }
   }
 }
