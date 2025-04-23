@@ -23,6 +23,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { Card, Button, ActivityIndicator } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { mockInvoices, mockCashbacks } from "@/data/mockData";
+import { theme } from "@/constants/theme";
 
 export default function HomeScreen() {
   const { colorScheme } = useTheme();
@@ -55,14 +56,11 @@ export default function HomeScreen() {
           <Text style={[styles.greeting, isDark && styles.textLight]}>
             Good morning, Alex
           </Text>
-          <TouchableOpacity style={styles.searchButton}>
-            <Search size={20} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
-          </TouchableOpacity>
         </View>
 
         {/* Balance Card */}
         <LinearGradient
-          colors={["#0A84FF", "#30D158"]}
+          colors={["#e8cc6d", "#D4AF37"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.balanceCard}
@@ -165,7 +163,7 @@ export default function HomeScreen() {
                 style={[styles.addBillCard, isDark && styles.addBillCardDark]}
                 onPress={() => router.push("/(tabs)/scan")}
               >
-                <Plus size={24} color="#0A84FF" />
+                <Plus size={24} color={theme.colors.primary} />
                 <Text style={styles.addBillText}>Scan New Bill</Text>
               </TouchableOpacity>
             </View>
@@ -376,7 +374,7 @@ const styles = StyleSheet.create({
   sectionLink: {
     fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: "#0A84FF",
+    color: theme.colors.primary,
   },
   billsList: {
     marginHorizontal: -4,
@@ -443,12 +441,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   addBillCardDark: {
-    backgroundColor: "#2A2A2A",
+    backgroundColor: theme.colors.primaryContainer,
   },
   addBillText: {
     fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: "#0A84FF",
+    color: theme.colors.primary,
     marginLeft: 8,
   },
   cashbacksList: {
