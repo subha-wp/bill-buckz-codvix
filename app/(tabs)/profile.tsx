@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Share, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { User, ChevronRight, LogOut, Heart, ShieldCheck, CircleHelp as HelpCircle, Settings, Share2 } from 'lucide-react-native';
-import { useTheme } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
-import { Divider, Switch, Card } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from "react";
+import * as SecureStore from "expo-secure-store";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Share,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import {
+  User,
+  ChevronRight,
+  LogOut,
+  ShieldCheck,
+  CircleHelp as HelpCircle,
+  Settings,
+  Share2,
+} from "lucide-react-native";
+import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
+import { Divider, Switch, Card } from "react-native-paper";
+import { useRouter } from "expo-router";
 
 export default function ProfileScreen() {
   const { colorScheme, toggleColorScheme } = useTheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
+  const [user, setUser] = useState<{
+    name: string;
+    phoneNumber: string;
+    referralCode: string;
+  } | null>(null);
   const { signOut } = useAuth();
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -19,10 +41,27 @@ export default function ProfileScreen() {
     setNotificationsEnabled(!notificationsEnabled);
   };
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const storedUser = await SecureStore.getItemAsync("user");
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          setUser(parsed);
+        } catch (err) {
+          console.error("Failed to parse user", err);
+        }
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const handleShare = async () => {
     try {
       await Share.share({
-        message: 'Join BillBuckz and get cashback on every bill! Use my referral code ALEX123 to get ₹50 bonus. Download now: https://billbuckz.app/invite/ALEX123',
+        message:
+          "Join BillBuckz and get cashback on every bill! Use my referral code ALEX123 to get ₹50 bonus. Download now: https://billbuckz.app/invite/ALEX123",
       });
     } catch (error) {
       console.error(error);
@@ -31,9 +70,9 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      
-      <ScrollView 
+      <StatusBar style={isDark ? "light" : "dark"} />
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
@@ -43,11 +82,14 @@ export default function ProfileScreen() {
           <Text style={[styles.headerTitle, isDark && styles.textLight]}>
             Profile
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.logoutButton}
-            onPress={() => signOut()}
+            onPress={async () => {
+              await SecureStore.deleteItemAsync("user");
+              router.replace("/(auth)/login");
+            }}
           >
-            <LogOut size={20} color={isDark ? '#FFFFFF' : '#0A0A0A'} />
+            <LogOut size={20} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
           </TouchableOpacity>
         </View>
 
@@ -59,15 +101,15 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, isDark && styles.textLight]}>
-                Alex Johnson
+                {user?.name || "Loading..."}
               </Text>
               <Text style={styles.profilePhone}>
-                +91 9876543210
+                +91 {user?.phoneNumber || "••••••••••"}
               </Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.editProfileButton}
-              onPress={() => router.push('/edit-profile')}
+              onPress={() => router.push("/edit-profile")}
             >
               <Text style={styles.editProfileText}>Edit</Text>
             </TouchableOpacity>
@@ -87,12 +129,11 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.referralCode}>
               <Text style={styles.referralCodeLabel}>Your Code</Text>
-              <Text style={styles.referralCodeValue}>ALEX123</Text>
+              <Text style={styles.referralCodeValue}>
+                {user?.referralCode || "••••••"}
+              </Text>
             </View>
-            <TouchableOpacity 
-              style={styles.shareButton}
-              onPress={handleShare}
-            >
+            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
               <Share2 size={16} color="#FFFFFF" />
               <Text style={styles.shareButtonText}>Share</Text>
             </TouchableOpacity>
@@ -120,9 +161,9 @@ export default function ProfileScreen() {
                 color="#0A84FF"
               />
             </View>
-            
+
             <Divider style={styles.settingDivider} />
-            
+
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingTitle, isDark && styles.textLight]}>
@@ -147,43 +188,49 @@ export default function ProfileScreen() {
             Support
           </Text>
           <Card style={[styles.supportCard, isDark && styles.cardDark]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.supportItem}
-              onPress={() => router.push('/help')}
+              onPress={() => router.push("/help")}
             >
               <View style={styles.supportItemHeader}>
                 <HelpCircle size={20} color="#0A84FF" />
-                <Text style={[styles.supportItemTitle, isDark && styles.textLight]}>
+                <Text
+                  style={[styles.supportItemTitle, isDark && styles.textLight]}
+                >
                   Help & Support
                 </Text>
               </View>
               <ChevronRight size={18} color="#AFAFAF" />
             </TouchableOpacity>
-            
+
             <Divider style={styles.supportDivider} />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.supportItem}
-              onPress={() => router.push('/privacy')}
+              onPress={() => router.push("/privacy")}
             >
               <View style={styles.supportItemHeader}>
                 <ShieldCheck size={20} color="#0A84FF" />
-                <Text style={[styles.supportItemTitle, isDark && styles.textLight]}>
+                <Text
+                  style={[styles.supportItemTitle, isDark && styles.textLight]}
+                >
                   Privacy Policy
                 </Text>
               </View>
               <ChevronRight size={18} color="#AFAFAF" />
             </TouchableOpacity>
-            
+
             <Divider style={styles.supportDivider} />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.supportItem}
-              onPress={() => router.push('/terms')}
+              onPress={() => router.push("/terms")}
             >
               <View style={styles.supportItemHeader}>
                 <Settings size={20} color="#0A84FF" />
-                <Text style={[styles.supportItemTitle, isDark && styles.textLight]}>
+                <Text
+                  style={[styles.supportItemTitle, isDark && styles.textLight]}
+                >
                   Terms & Conditions
                 </Text>
               </View>
@@ -194,9 +241,7 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>
-            BillBuckz v1.0.0
-          </Text>
+          <Text style={styles.appInfoText}>BillBuckz v1.0.0</Text>
           <View style={styles.appInfoLinks}>
             <TouchableOpacity>
               <Text style={styles.appInfoLink}>Privacy</Text>
@@ -215,10 +260,10 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: "#F8F8F8",
   },
   containerDark: {
-    backgroundColor: '#121212',
+    backgroundColor: "#121212",
   },
   scrollView: {
     flex: 1,
@@ -229,76 +274,76 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   headerTitle: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     fontSize: 24,
-    color: '#0A0A0A',
+    color: "#0A0A0A",
   },
   logoutButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   profileCard: {
     marginBottom: 16,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     elevation: 2,
   },
   cardDark: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: "#1E1E1E",
   },
   profileCardContent: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   profileAvatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#0A84FF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#0A84FF",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   profileInfo: {
     flex: 1,
   },
   profileName: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     fontSize: 18,
-    color: '#0A0A0A',
+    color: "#0A0A0A",
     marginBottom: 4,
   },
   profilePhone: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 14,
-    color: '#6B6B6B',
+    color: "#6B6B6B",
   },
   editProfileButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
-    backgroundColor: '#EBF6FF',
+    backgroundColor: "#EBF6FF",
   },
   editProfileText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: '#0A84FF',
+    color: "#0A84FF",
   },
   referralCard: {
     marginBottom: 24,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     elevation: 2,
   },
   referralCardContent: {
@@ -308,135 +353,135 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   referralTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     fontSize: 18,
-    color: '#0A0A0A',
+    color: "#0A0A0A",
     marginBottom: 4,
   },
   referralDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 14,
-    color: '#6B6B6B',
+    color: "#6B6B6B",
   },
   referralCode: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
   referralCodeLabel: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 12,
-    color: '#6B6B6B',
+    color: "#6B6B6B",
     marginBottom: 4,
   },
   referralCodeValue: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     fontSize: 20,
-    color: '#0A84FF',
+    color: "#0A84FF",
   },
   shareButton: {
-    flexDirection: 'row',
-    backgroundColor: '#0A84FF',
+    flexDirection: "row",
+    backgroundColor: "#0A84FF",
     borderRadius: 8,
     padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   shareButtonText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     marginLeft: 8,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     fontSize: 18,
-    color: '#0A0A0A',
+    color: "#0A0A0A",
     marginBottom: 12,
   },
   settingsCard: {
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     elevation: 2,
   },
   settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
   },
   settingInfo: {
     flex: 1,
   },
   settingTitle: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: '#0A0A0A',
+    color: "#0A0A0A",
     marginBottom: 4,
   },
   settingDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 14,
-    color: '#6B6B6B',
+    color: "#6B6B6B",
   },
   settingDivider: {
     marginLeft: 16,
   },
   supportCard: {
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     elevation: 2,
   },
   supportItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
   },
   supportItemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   supportItemTitle: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: '#0A0A0A',
+    color: "#0A0A0A",
     marginLeft: 12,
   },
   supportDivider: {
     marginLeft: 16,
   },
   appInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 12,
-    marginBottom: Platform.OS === 'ios' ? 24 : 0,
+    marginBottom: Platform.OS === "ios" ? 24 : 0,
   },
   appInfoText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 14,
-    color: '#6B6B6B',
+    color: "#6B6B6B",
     marginBottom: 8,
   },
   appInfoLinks: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   appInfoLink: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: '#0A84FF',
+    color: "#0A84FF",
   },
   appInfoDot: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 14,
-    color: '#6B6B6B',
+    color: "#6B6B6B",
     marginHorizontal: 8,
   },
   textLight: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 });

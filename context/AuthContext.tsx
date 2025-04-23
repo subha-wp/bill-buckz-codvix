@@ -1,30 +1,20 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { User, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
-import { auth } from "@/config/firebase";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 
 interface AuthContextType {
-  user: User | null;
+  user: any | null;
+  isAuthenticated: boolean;
   loading: boolean;
-  verificationId: string | null;
-  phoneNumber: string | null;
-  setVerificationId: (id: string | null) => void;
-  setPhoneNumber: (number: string | null) => void;
-  signInWithPhone: (phoneNumber: string) => Promise<void>;
-  confirmCode: (code: string) => Promise<void>;
   signOut: () => Promise<void>;
+  setUserFromLogin: (user: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  isAuthenticated: false,
   loading: true,
-  verificationId: null,
-  phoneNumber: null,
-  setVerificationId: () => {},
-  setPhoneNumber: () => {},
-  signInWithPhone: async () => {},
-  confirmCode: async () => {},
   signOut: async () => {},
+  setUserFromLogin: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -32,76 +22,46 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [verificationId, setVerificationId] = useState<string | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    const loadUser = async () => {
+      const storedUser = await SecureStore.getItemAsync("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          console.log(parsedUser);
 
-    return unsubscribe;
+          setUser(parsedUser);
+        } catch (e) {
+          console.error("Error parsing stored user:", e);
+        }
+      }
+      setLoading(false);
+    };
+
+    loadUser();
   }, []);
 
-  const signInWithPhone = async (phoneNumber: string) => {
-    try {
-      const provider = new PhoneAuthProvider(auth);
-      const verificationId = await provider.verifyPhoneNumber(
-        phoneNumber,
-        // @ts-ignore - RecaptchaVerifier is not needed for Expo
-        null
-      );
-      setVerificationId(verificationId);
-      setPhoneNumber(phoneNumber);
-    } catch (error) {
-      console.error("Error sending verification code:", error);
-      throw error;
-    }
-  };
-
-  const confirmCode = async (code: string) => {
-    try {
-      if (!verificationId) throw new Error("No verification ID");
-
-      const credential = PhoneAuthProvider.credential(verificationId, code);
-      const result = await signInWithCredential(auth, credential);
-      setUser(result.user);
-
-      // Clear verification state
-      setVerificationId(null);
-      setPhoneNumber(null);
-    } catch (error) {
-      console.error("Error confirming code:", error);
-      throw error;
-    }
+  const setUserFromLogin = async (userData: any) => {
+    await SecureStore.setItemAsync("user", JSON.stringify(userData));
+    setUser(userData);
   };
 
   const signOut = async () => {
-    try {
-      await auth.signOut();
-      await SecureStore.deleteItemAsync("userToken");
-      setUser(null);
-    } catch (error) {
-      console.error("Error signing out:", error);
-      throw error;
-    }
+    await SecureStore.deleteItemAsync("user");
+    setUser(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        isAuthenticated: user ? true : false,
         loading,
-        verificationId,
-        phoneNumber,
-        setVerificationId,
-        setPhoneNumber,
-        signInWithPhone,
-        confirmCode,
         signOut,
+        setUserFromLogin,
       }}
     >
       {children}
