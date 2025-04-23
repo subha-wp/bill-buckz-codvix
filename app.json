@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Bill Buckz",
-    "slug": "bill-buckz",
+    "slug": "bill-buckz-codvix",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -24,15 +24,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nextcoder.billbuckz",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "com.devcodersubha.billbucks"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.nextcoder.billbuckz",
+      "package": "com.devcodersubha.billbucks",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -48,7 +47,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "d017513e-bcaf-4057-8b91-5d5feefdca3d"
+        "projectId": "b66b111e-248c-4f68-aabb-2b22ce5eb6ad"
       }
     }
   }
