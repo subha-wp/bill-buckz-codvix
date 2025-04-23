@@ -249,6 +249,6 @@ const styles = StyleSheet.create({
   registerLinkText: {
     fontFamily: "Inter-SemiBold",
     fontSize: 16,
-    color: "#0A84FF",
+    color: theme.colors.primary,
   },
 });

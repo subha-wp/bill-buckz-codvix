@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import * as SecureStore from "expo-secure-store";
 import {
   View,
   Text,
@@ -40,26 +41,39 @@ export default function Register() {
   const handleRegister = async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      console.log("Haptics not available on web");
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch("https://your-api-url.com/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          phoneNumber,
-          password,
-          referralCode,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_REST_API}/api/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            phoneNumber,
+            password,
+            referralCode,
+          }),
+        }
+      );
 
       const result = await response.json();
-      console.log(result);
-      // Navigate to login page or show success
-      router.replace("/(auth)/login");
+
+      if (result.message) {
+        // Handle any message (e.g., error or info)
+        alert(`${result.message}, use login instead`);
+        return; // Stop further execution
+      }
+
+      if (result.user) {
+        await SecureStore.setItemAsync("user", JSON.stringify(result.user));
+        router.replace("/(tabs)");
+      }
     } catch (error) {
       console.error("Registration failed", error);
     } finally {

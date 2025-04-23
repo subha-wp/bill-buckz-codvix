@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { useRouter } from "expo-router";
 
 interface AuthContextType {
   user: any | null;
@@ -24,20 +25,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const loadUser = async () => {
-      const storedUser = await SecureStore.getItemAsync("user");
-      if (storedUser) {
-        try {
+      try {
+        const storedUser = await SecureStore.getItemAsync("user");
+        if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
-
           setUser(parsedUser);
-        } catch (e) {
-          console.error("Error parsing stored user:", e);
+          router.replace("/(tabs)");
+        } else {
+          router.replace("/(auth)/login");
         }
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+        router.replace("/(auth)/login");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadUser();
@@ -51,13 +57,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signOut = async () => {
     await SecureStore.deleteItemAsync("user");
     setUser(null);
+    router.replace("/(auth)/login");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: user ? true : false,
+        isAuthenticated: !!user,
         loading,
         signOut,
         setUserFromLogin,
