@@ -373,7 +373,10 @@ export default function InvoicesScreen() {
                 ))}
                 {loadingMore && (
                   <View style={styles.loadMoreContainer}>
-                    <ActivityIndicator size="small" color="#0A84FF" />
+                    <ActivityIndicator
+                      size="small"
+                      color={theme.colors.primary}
+                    />
                   </View>
                 )}
                 {!hasMore && invoiceData.merchantInvoices.length > 0 && (
@@ -384,7 +387,7 @@ export default function InvoicesScreen() {
               </View>
             ) : (
               <View style={styles.emptyStateContainer}>
-                <Receipt size={48} color="#AFAFAF" />
+                <Receipt size={48} color={theme.colors.primary} />
                 <Text style={styles.emptyStateText}>
                   No merchant invoices yet
                 </Text>

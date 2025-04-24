@@ -5,6 +5,7 @@ import { Card } from "react-native-paper";
 import { Receipt } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
+import { theme } from "@/constants/theme";
 
 interface BillCardProps {
   id: string;
@@ -28,14 +29,10 @@ export function BillCard({
   const isDark = colorScheme === "dark";
 
   return (
-    <Card
-      key={id}
-      style={[styles.billCard, isDark && styles.cardDark]}
-      onPress={() => router.push(`/invoices/${id}`)}
-    >
+    <Card key={id} style={[styles.billCard, isDark && styles.cardDark]}>
       <View style={styles.billCardContent}>
         <View style={styles.billIconContainer}>
-          <Receipt size={24} color="#0A84FF" />
+          <Receipt size={24} color={theme.colors.primary} />
         </View>
         <View style={styles.billDetails}>
           <Text style={[styles.billMerchant, isDark && styles.textLight]}>
@@ -73,7 +70,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#EBF6FF",
+    backgroundColor: theme.colors.primaryContainer,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,

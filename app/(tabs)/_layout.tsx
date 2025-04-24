@@ -1,7 +1,13 @@
 import React from "react";
 import { StyleSheet, Platform } from "react-native";
 import { Tabs } from "expo-router";
-import { Chrome as Home, Camera, Map, Wallet, User } from "lucide-react-native";
+import {
+  Chrome as Home,
+  Camera,
+  Map,
+  Wallet,
+  Trophy,
+} from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/context/ThemeContext";
 import { theme } from "@/constants/theme";
@@ -29,10 +35,10 @@ export default function TabLayout() {
         return <Camera size={iconSize} color={iconColor} />;
       case "merchants":
         return <Map size={iconSize} color={iconColor} />;
+      case "leaderboard":
+        return <Trophy size={iconSize} color={iconColor} />;
       case "wallet":
         return <Wallet size={iconSize} color={iconColor} />;
-      case "profile":
-        return <User size={iconSize} color={iconColor} />;
       default:
         return null;
     }
@@ -94,15 +100,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="wallet"
+        name="leaderboard"
         options={{
-          title: "Wallet",
+          title: "Leaders",
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="wallet"
         options={{
-          title: "Profile",
+          title: "Wallet",
         }}
       />
     </Tabs>

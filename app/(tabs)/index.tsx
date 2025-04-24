@@ -18,6 +18,7 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { BalanceCard } from "@/components/shared/BalanceCard";
 import { BillCard } from "@/components/shared/BillCard";
 import { useAuth } from "@/context/AuthContext";
+import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
 
 export default function HomeScreen() {
   const { colorScheme } = useTheme();
@@ -73,7 +74,7 @@ export default function HomeScreen() {
           balance={walletData.availableBalance}
           label="Available Cashback"
         />
-
+        <LeaderboardPreview />
         {/* Recent Bills */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -87,7 +88,7 @@ export default function HomeScreen() {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#0A84FF" />
+              <ActivityIndicator size="small" color={theme.colors.pri} />
             </View>
           ) : recentInvoices.length > 0 ? (
             <View style={styles.billsList}>
@@ -124,14 +125,14 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, isDark && styles.textLight]}>
               Cashback Activity
             </Text>
-            <TouchableOpacity onPress={() => router.push("/cashbacks")}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/wallet")}>
               <Text style={styles.sectionLink}>View All</Text>
             </TouchableOpacity>
           </View>
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#0A84FF" />
+              <ActivityIndicator size="small" color={theme.colors.primary} />
             </View>
           ) : recentCashbacks.length > 0 ? (
             <View style={styles.cashbacksList}>
