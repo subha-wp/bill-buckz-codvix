@@ -44,12 +44,12 @@ export function BalanceCard({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.balanceAction}
-            onPress={() => router.push("/(tabs)/scan")}
+            onPress={() => router.push("/upload-invoice")}
           >
             <View style={styles.balanceActionIcon}>
               <Receipt size={16} color="#FFFFFF" />
             </View>
-            <Text style={styles.balanceActionText}>Scan Bill</Text>
+            <Text style={styles.balanceActionText}>Add Bill</Text>
           </TouchableOpacity>
         </View>
       )}

@@ -98,10 +98,10 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 style={[styles.addBillCard, isDark && styles.addBillCardDark]}
-                onPress={() => router.push("/(tabs)/scan")}
+                onPress={() => router.push("/upload-invoice")}
               >
                 <Plus size={24} color={theme.colors.primary} />
-                <Text style={styles.addBillText}>Scan New Bill</Text>
+                <Text style={styles.addBillText}>Add New Bill</Text>
               </TouchableOpacity>
             </View>
           ) : (

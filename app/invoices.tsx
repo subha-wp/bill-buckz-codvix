@@ -22,6 +22,7 @@ import {
   Clock,
   Store,
   FileText,
+  ChevronLeft,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
@@ -210,6 +211,12 @@ export default function InvoicesScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ChevronLeft size={24} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
+          </TouchableOpacity>
           <Text style={[styles.headerTitle, isDark && styles.textLight]}>
             Invoices
           </Text>
@@ -511,7 +518,20 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
