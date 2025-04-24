@@ -17,7 +17,7 @@ interface BillCardProps {
 
 export function BillCard({
   id,
-  merchant,
+  merchantName,
   date,
   amount,
   cashbackAmount,
@@ -39,23 +39,13 @@ export function BillCard({
         </View>
         <View style={styles.billDetails}>
           <Text style={[styles.billMerchant, isDark && styles.textLight]}>
-            {merchant}
+            {merchantName}
           </Text>
           <Text style={styles.billDate}>{date}</Text>
         </View>
         <View style={styles.billAmount}>
           <Text style={[styles.billAmountText, isDark && styles.textLight]}>
             ₹{amount}
-          </Text>
-          <Text
-            style={[
-              styles.billCashback,
-              {
-                color: cashbackStatus === "Credited" ? "#30D158" : "#FF9F0A",
-              },
-            ]}
-          >
-            ₹{cashbackAmount} {cashbackStatus}
           </Text>
         </View>
       </View>

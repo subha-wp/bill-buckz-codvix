@@ -13,7 +13,6 @@ import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
 import { Button, ActivityIndicator } from "react-native-paper";
 import { useRouter } from "expo-router";
-import { mockInvoices, mockCashbacks } from "@/data/mockData";
 import { theme } from "@/constants/theme";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { BalanceCard } from "@/components/shared/BalanceCard";
@@ -27,18 +26,38 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [recentCashbacks, setRecentCashbacks] = useState([]);
-
-  useEffect(() => {
-    // Simulate API call to fetch data
-    setTimeout(() => {
-      setRecentInvoices(mockInvoices.slice(0, 3));
-      setRecentCashbacks(mockCashbacks.slice(0, 3));
-      setLoading(false);
-    }, 1000);
-  }, []);
+  const [walletData, setWalletData] = useState({
+    totalEarned: "0.00",
+    availableBalance: "0.00",
+    pendingAmount: "0.00",
+    withdrawnAmount: "0.00",
+  });
 
   const { user } = useAuth();
-  const balance = parseInt(user.balance);
+  const userId = user.id;
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Fetch wallet data
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_REST_API}/api/wallet/?userId=${userId}`
+      );
+
+      const data = await response.json();
+      setWalletData(data.wallet);
+      setRecentInvoices(data.recentInvoices);
+      setRecentCashbacks(data.cashbacks);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
@@ -50,7 +69,10 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <HomeHeader />
-        <BalanceCard balance={balance} label="Available Cashback" />
+        <BalanceCard
+          balance={walletData.availableBalance}
+          label="Available Cashback"
+        />
 
         {/* Recent Bills */}
         <View style={styles.section}>

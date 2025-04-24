@@ -1,5 +1,7 @@
 // @ts-nocheck
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import {
   View,
   Text,
@@ -28,7 +30,7 @@ import {
   Portal,
   Dialog,
 } from "react-native-paper";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { theme } from "@/constants/theme";
@@ -38,6 +40,7 @@ export default function WithdrawScreen() {
   const { colorScheme } = useTheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
+  const { availableAmount } = useLocalSearchParams();
   const [amount, setAmount] = useState("");
   const [upiId, setUpiId] = useState("");
   const [showUPIInfo, setShowUPIInfo] = useState(false);
@@ -47,7 +50,10 @@ export default function WithdrawScreen() {
   const [error, setError] = useState("");
   const { user } = useAuth();
 
-  const availableBalance = parseInt(user.balance) || 0;
+  // Use the passed availableAmount if provided, otherwise fallback to user balance
+  const availableBalance = availableAmount
+    ? Number.parseFloat(availableAmount.toString())
+    : Number.parseInt(user.balance) || 0;
   const predefinedAmounts = [200, 500, 1000];
 
   const handleAmountSelection = (selectedAmount: number) => {
@@ -110,7 +116,7 @@ export default function WithdrawScreen() {
   };
 
   const isWithdrawDisabled = () => {
-    const amountValue = parseFloat(amount);
+    const amountValue = Number.parseFloat(amount);
     return (
       loading ||
       !amount ||
@@ -183,7 +189,7 @@ export default function WithdrawScreen() {
               style={styles.input}
               outlineStyle={styles.inputOutline}
             />
-            {parseFloat(amount) > availableBalance && (
+            {Number.parseFloat(amount) > availableBalance && (
               <Text style={styles.errorText}>
                 Amount exceeds available balance
               </Text>
@@ -210,6 +216,19 @@ export default function WithdrawScreen() {
                   ₹{predefinedAmount}
                 </Chip>
               ))}
+              <Chip
+                mode="outlined"
+                selected={amount === availableBalance.toString()}
+                onPress={() => handleAmountSelection(availableBalance)}
+                style={[
+                  styles.amountChip,
+                  amount === availableBalance.toString() &&
+                    styles.selectedAmountChip,
+                ]}
+                selectedColor={theme.colors.primary}
+              >
+                Max
+              </Chip>
             </View>
           </View>
 

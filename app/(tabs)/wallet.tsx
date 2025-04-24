@@ -178,7 +178,12 @@ export default function WalletScreen() {
             mode="contained"
             icon={() => <ArrowUp size={16} color={theme.colors.secondary} />}
             style={styles.withdrawButton}
-            onPress={() => router.push("/withdraw")}
+            onPress={() =>
+              router.push({
+                pathname: "/withdraw",
+                params: { availableAmount: walletData.availableBalance },
+              })
+            }
           >
             Withdraw
           </Button>
