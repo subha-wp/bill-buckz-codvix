@@ -38,3 +38,4 @@ google-services.json
 *.tsbuildinfo
 
 app-example
+.env

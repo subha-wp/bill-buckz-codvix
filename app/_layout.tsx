@@ -18,6 +18,10 @@ import {
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { theme } from "@/constants/theme";
+import {
+  requestUserPermission,
+  setupNotificationListeners,
+} from "@/utils/notifications";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -32,6 +36,22 @@ export default function RootLayout() {
     "Inter-SemiBold": Inter_600SemiBold,
     "Inter-Bold": Inter_700Bold,
   });
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      // Request notification permissions
+      await requestUserPermission();
+
+      // Setup notification listeners
+      const unsubscribe = setupNotificationListeners();
+
+      return () => {
+        unsubscribe();
+      };
+    };
+
+    initializeApp();
+  }, []);
 
   // Hide splash screen once fonts are loaded
   useEffect(() => {
