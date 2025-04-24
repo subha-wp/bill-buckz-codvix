@@ -176,7 +176,7 @@ export default function MerchantsScreen() {
         </View>
 
         {/* Search Input */}
-        <TextInput
+        {/* <TextInput
           mode="outlined"
           placeholder="Search merchants"
           value={searchQuery}
@@ -188,7 +188,7 @@ export default function MerchantsScreen() {
               icon={() => <Search size={20} color={theme.colors.primary} />}
             />
           }
-        />
+        /> */}
 
         {/* Categories */}
         <FlatList
