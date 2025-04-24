@@ -1,11 +1,15 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
+  RefreshControl, // Import RefreshControl
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -28,7 +32,8 @@ import {
   Card,
 } from "react-native-paper";
 import { useRouter } from "expo-router";
-import { mockWithdrawals } from "@/data/mockData";
+import { useAuth } from "@/context/AuthContext";
+import { theme } from "@/constants/theme";
 
 export default function WalletScreen() {
   const { colorScheme } = useTheme();
@@ -36,15 +41,50 @@ export default function WalletScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("withdrawals");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [walletData, setWalletData] = useState({
+    totalEarned: "0.00",
+    availableBalance: "0.00",
+    pendingAmount: "0.00",
+    withdrawnAmount: "0.00",
+  });
   const [withdrawals, setWithdrawals] = useState([]);
+  const [cashbacks, setCashbacks] = useState([]);
+
+  const { user } = useAuth();
+
+  // Replace with actual user ID from your authentication system
+  const userId = user.id;
 
   useEffect(() => {
-    // Simulate API call to fetch data
-    setTimeout(() => {
-      setWithdrawals(mockWithdrawals);
-      setLoading(false);
-    }, 1000);
+    fetchWalletData();
   }, []);
+
+  const fetchWalletData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_REST_API}/api/wallet?userId=${userId}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json(); // Properly parse JSON from fetch response
+
+      setWalletData(data.wallet);
+      setWithdrawals(data.withdrawals);
+      setCashbacks(data.cashbacks);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching wallet data:", err);
+      setError("Failed to load wallet data. Please try again.");
+      Alert.alert("Error", "Failed to load wallet data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -80,6 +120,9 @@ export default function WalletScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={fetchWalletData} />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -104,21 +147,27 @@ export default function WalletScreen() {
               Available
             </Chip>
           </View>
-          <Text style={styles.balanceAmount}>₹3,280.50</Text>
+          <Text style={styles.balanceAmount}>₹{walletData.totalEarned}</Text>
           <View style={styles.balanceInfo}>
             <View style={styles.balanceInfoItem}>
               <Text style={styles.balanceInfoLabel}>Available</Text>
-              <Text style={styles.balanceInfoValue}>₹1,245.85</Text>
+              <Text style={styles.balanceInfoValue}>
+                ₹{walletData.availableBalance}
+              </Text>
             </View>
             <View style={styles.balanceInfoDivider} />
             <View style={styles.balanceInfoItem}>
               <Text style={styles.balanceInfoLabel}>Pending</Text>
-              <Text style={styles.balanceInfoValue}>₹320.00</Text>
+              <Text style={styles.balanceInfoValue}>
+                ₹{walletData.pendingAmount}
+              </Text>
             </View>
             <View style={styles.balanceInfoDivider} />
             <View style={styles.balanceInfoItem}>
               <Text style={styles.balanceInfoLabel}>Withdrawn</Text>
-              <Text style={styles.balanceInfoValue}>₹1,714.65</Text>
+              <Text style={styles.balanceInfoValue}>
+                ₹{walletData.withdrawnAmount}
+              </Text>
             </View>
           </View>
         </LinearGradient>
@@ -127,7 +176,7 @@ export default function WalletScreen() {
         <View style={styles.actionButtons}>
           <Button
             mode="contained"
-            icon={() => <ArrowUp size={16} color="#FFFFFF" />}
+            icon={() => <ArrowUp size={16} color={theme.colors.secondary} />}
             style={styles.withdrawButton}
             onPress={() => router.push("/withdraw")}
           >
@@ -135,7 +184,7 @@ export default function WalletScreen() {
           </Button>
           <Button
             mode="outlined"
-            icon={() => <ArrowDown size={16} color="#0A84FF" />}
+            icon={() => <ArrowDown size={16} color={theme.colors.primary} />}
             style={styles.historyButton}
             onPress={() => router.push("/cashbacks")}
           >
@@ -247,34 +296,82 @@ export default function WalletScreen() {
               <View style={styles.emptyStateContainer}>
                 <ArrowUp size={48} color="#AFAFAF" />
                 <Text style={styles.emptyStateText}>No withdrawals yet</Text>
-                <Button
-                  mode="contained"
-                  onPress={() => router.push("/withdraw")}
-                  style={styles.emptyStateButton}
-                >
-                  Withdraw Now
-                </Button>
               </View>
             )}
           </View>
         )}
 
-        {/* Cashbacks List - stub for the alternative tab */}
+        {/* Cashbacks List */}
         {activeTab === "cashbacks" && (
           <View style={styles.cashbacksContainer}>
-            <View style={styles.emptyStateContainer}>
-              <ArrowDown size={48} color="#AFAFAF" />
-              <Text style={styles.emptyStateText}>
-                Switch to the cashbacks tab to view your earnings
-              </Text>
-              <Button
-                mode="contained"
-                onPress={() => router.push("/cashbacks")}
-                style={styles.emptyStateButton}
-              >
-                View Cashbacks
-              </Button>
-            </View>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#0A84FF" />
+              </View>
+            ) : cashbacks.length > 0 ? (
+              <View style={styles.cashbacksList}>
+                {cashbacks.map((cashback) => (
+                  <Card
+                    key={cashback.id}
+                    style={[styles.withdrawalCard, isDark && styles.cardDark]}
+                  >
+                    <View style={styles.withdrawalCardContent}>
+                      <View style={styles.withdrawalIconContainer}>
+                        <ArrowDown size={24} color="#0A84FF" />
+                      </View>
+                      <View style={styles.withdrawalDetails}>
+                        <View style={styles.withdrawalHeaderRow}>
+                          <Text
+                            style={[
+                              styles.withdrawalTitle,
+                              isDark && styles.textLight,
+                            ]}
+                          >
+                            {cashback.merchantName}
+                          </Text>
+                        </View>
+                        <Text style={styles.withdrawalDate}>
+                          {cashback.date} • {cashback.time}
+                        </Text>
+                        <View style={styles.withdrawalStatus}>
+                          <Text
+                            style={[
+                              styles.withdrawalStatusText,
+                              { color: "#30D158" },
+                            ]}
+                          >
+                            {cashback.type}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.withdrawalAmount}>
+                        <Text
+                          style={[
+                            styles.withdrawalAmountText,
+                            isDark && styles.textLight,
+                          ]}
+                        >
+                          ₹{cashback.amount}
+                        </Text>
+                        <ChevronRight size={16} color="#AFAFAF" />
+                      </View>
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <ArrowDown size={48} color="#AFAFAF" />
+                <Text style={styles.emptyStateText}>No cashbacks yet</Text>
+                <Button
+                  mode="contained"
+                  onPress={() => router.push("/cashbacks")}
+                  style={styles.emptyStateButton}
+                >
+                  View Cashbacks
+                </Button>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -282,155 +379,150 @@ export default function WalletScreen() {
   );
 }
 
+// Styles remain the same as in your original component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
+    backgroundColor: "#F7F7F7",
   },
   containerDark: {
-    backgroundColor: "#121212",
+    backgroundColor: "#1E1E1E",
   },
   scrollView: {
     flex: 1,
   },
   scrollViewContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 100,
+    padding: 20,
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   headerTitle: {
-    fontFamily: "Inter-Bold",
     fontSize: 24,
-    color: "#0A0A0A",
+    fontWeight: "bold",
+    color: "#333",
+  },
+  textLight: {
+    color: "#fff",
   },
   balanceCard: {
-    borderRadius: 16,
+    backgroundColor: "#D4AF37",
+    borderRadius: 12,
     padding: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   balanceHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   balanceLabel: {
-    fontFamily: "Inter-Medium",
-    fontSize: 14,
-    color: "#FFFFFF",
-    opacity: 0.9,
+    fontSize: 16,
+    color: "#fff",
   },
   balanceBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginLeft: 8,
   },
   balanceBadgeText: {
-    fontFamily: "Inter-Medium",
+    color: "#fff",
     fontSize: 12,
-    color: "#FFFFFF",
   },
   balanceAmount: {
-    fontFamily: "Inter-Bold",
     fontSize: 32,
-    color: "#FFFFFF",
-    marginBottom: 16,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 10,
   },
   balanceInfo: {
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 8,
-    padding: 12,
+    justifyContent: "space-between",
   },
   balanceInfoItem: {
     flex: 1,
-    alignItems: "center",
   },
   balanceInfoLabel: {
-    fontFamily: "Inter-Regular",
     fontSize: 12,
-    color: "#FFFFFF",
-    opacity: 0.9,
+    color: "rgba(255, 255, 255, 0.8)",
     marginBottom: 4,
   },
   balanceInfoValue: {
-    fontFamily: "Inter-SemiBold",
     fontSize: 16,
-    color: "#FFFFFF",
+    fontWeight: "bold",
+    color: "#fff",
   },
   balanceInfoDivider: {
     width: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    marginHorizontal: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    marginHorizontal: 10,
   },
   actionButtons: {
     flexDirection: "row",
-    marginBottom: 24,
+    justifyContent: "space-between",
+    marginBottom: 20,
   },
   withdrawButton: {
     flex: 1,
-    marginRight: 8,
-    borderRadius: 8,
+    marginRight: 10,
+    backgroundColor: theme.colors.primary,
   },
   historyButton: {
     flex: 1,
-    marginLeft: 8,
-    borderRadius: 8,
+    marginLeft: 10,
+    borderColor: theme.colors.primary,
   },
   tabsContainer: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 10,
   },
   tab: {
     flex: 1,
-    alignItems: "center",
     paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    backgroundColor: "#eee",
   },
   activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#0A84FF",
+    backgroundColor: theme.colors.primary,
   },
   tabText: {
-    fontFamily: "Inter-Medium",
-    fontSize: 16,
-    color: "#6B6B6B",
+    fontSize: 14,
+    color: "#666",
   },
   activeTabText: {
-    color: "#0A84FF",
+    color: "#fff",
+    fontWeight: "bold",
   },
   divider: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   withdrawalsContainer: {
-    marginBottom: 24,
+    flex: 1,
   },
-  cashbacksContainer: {
-    marginBottom: 24,
+  withdrawalsList: {
+    flex: 1,
   },
-  withdrawalsList: {},
   withdrawalCard: {
-    marginBottom: 12,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    elevation: 2,
+    marginBottom: 15,
+    borderRadius: 8,
+    backgroundColor: "#fff",
   },
   cardDark: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#2C2C2E",
   },
   withdrawalCardContent: {
     flexDirection: "row",
-    padding: 16,
     alignItems: "center",
+    padding: 15,
   },
   withdrawalIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#EBF6FF",
-    justifyContent: "center",
+    backgroundColor: "rgba(10, 132, 255, 0.1)",
     alignItems: "center",
-    marginRight: 12,
+    justifyContent: "center",
+    marginRight: 15,
   },
   withdrawalDetails: {
     flex: 1,
@@ -441,38 +533,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   withdrawalTitle: {
-    fontFamily: "Inter-SemiBold",
     fontSize: 16,
-    color: "#0A0A0A",
-    marginBottom: 4,
+    fontWeight: "bold",
+    color: "#333",
   },
   withdrawalDate: {
-    fontFamily: "Inter-Regular",
-    fontSize: 14,
+    fontSize: 12,
     color: "#6B6B6B",
-    marginBottom: 4,
   },
   withdrawalStatus: {
     flexDirection: "row",
     alignItems: "center",
   },
   withdrawalStatusText: {
-    fontFamily: "Inter-Medium",
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: "bold",
   },
   withdrawalUpi: {
-    fontFamily: "Inter-Regular",
-    fontSize: 14,
+    fontSize: 12,
     color: "#6B6B6B",
   },
   withdrawalAmount: {
     alignItems: "flex-end",
   },
   withdrawalAmountText: {
-    fontFamily: "Inter-SemiBold",
     fontSize: 16,
-    color: "#0A0A0A",
-    marginBottom: 4,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  cashbacksContainer: {
+    flex: 1,
+  },
+  cashbacksList: {
+    flex: 1,
   },
   loadingContainer: {
     padding: 20,
@@ -480,23 +574,15 @@ const styles = StyleSheet.create({
   },
   emptyStateContainer: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 12,
+    padding: 20,
   },
   emptyStateText: {
-    fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: "#6B6B6B",
-    marginTop: 12,
-    marginBottom: 16,
-    textAlign: "center",
+    color: "#AFAFAF",
+    marginTop: 10,
+    marginBottom: 20,
   },
   emptyStateButton: {
-    borderRadius: 20,
-  },
-  textLight: {
-    color: "#FFFFFF",
+    backgroundColor: "#0A84FF",
   },
 });

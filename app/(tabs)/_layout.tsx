@@ -4,6 +4,7 @@ import { Tabs } from "expo-router";
 import { Chrome as Home, Camera, Map, Wallet, User } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/context/ThemeContext";
+import { theme } from "@/constants/theme";
 
 export default function TabLayout() {
   const { colorScheme } = useTheme();
@@ -15,7 +16,11 @@ export default function TabLayout() {
     color: string
   ) => {
     const iconSize = 22;
-    const iconColor = focused ? "#0A84FF" : isDark ? "#AFAFAF" : "#6B6B6B";
+    const iconColor = focused
+      ? theme.colors.primary
+      : isDark
+      ? "#AFAFAF"
+      : "#6B6B6B";
 
     switch (routeName) {
       case "index":
@@ -39,7 +44,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarIcon: ({ focused, color }) =>
           getTabBarIcon(route.name, focused, color),
-        tabBarActiveTintColor: "#0A84FF",
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: isDark ? "#AFAFAF" : "#6B6B6B",
         tabBarStyle: {
           height: 80,

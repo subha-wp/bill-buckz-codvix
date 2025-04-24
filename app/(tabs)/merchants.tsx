@@ -1,14 +1,14 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+"use client";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Image,
-  Platform,
-  Dimensions,
+  RefreshControl,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -21,12 +21,11 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
 import { TextInput, Card, Chip, ActivityIndicator } from "react-native-paper";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useRouter } from "expo-router";
-import { mockMerchants } from "@/data/mockData";
 import * as Location from "expo-location";
+import { theme } from "@/constants/theme";
 
-const MAP_HEIGHT = 200;
+const LIMIT = 5; // Limit to 5 merchants per request for faster loading
 
 export default function MerchantsScreen() {
   const { colorScheme } = useTheme();
@@ -35,68 +34,145 @@ export default function MerchantsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [merchants, setMerchants] = useState([]);
   const [location, setLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState(null);
-  const [mapRegion, setMapRegion] = useState({
-    latitude: 12.9716,
-    longitude: 77.5946,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [locationError, setLocationError] = useState(null);
 
   const categories = ["All", "Restaurant", "Grocery", "Fashion", "Electronics"];
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermission(status === "granted");
-
-      if (status === "granted") {
-        const location = await Location.getCurrentPositionAsync({});
-        setLocation(location);
-        setMapRegion({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
+  // Function to fetch merchants from API
+  const fetchMerchants = useCallback(
+    async (pageNum = 1, refresh = false) => {
+      if (!location) {
+        setLoading(false);
+        return;
       }
 
-      // Simulate API call to fetch data
-      setTimeout(() => {
-        setMerchants(mockMerchants);
+      try {
+        const { latitude, longitude } = location.coords;
+        let url = `${process.env.EXPO_PUBLIC_REST_API}/api/merchants/nearby?lat=${latitude}&lng=${longitude}&limit=${LIMIT}&page=${pageNum}`;
+        if (searchQuery) {
+          url += `&q=${encodeURIComponent(searchQuery)}`;
+        }
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch merchants");
+        }
+
+        const data = await response.json();
+
+        if (refresh || pageNum === 1) {
+          setMerchants(data.merchants);
+        } else {
+          setMerchants((prev) => [...prev, ...data.merchants]);
+        }
+
+        setHasMore(data.hasMore);
+        return data.merchants;
+      } catch (error) {
+        console.error("Error fetching merchants:", error);
+        return [];
+      } finally {
         setLoading(false);
-      }, 1000);
+        setLoadingMore(false);
+        setRefreshing(false);
+      }
+    },
+    [location, searchQuery]
+  );
+
+  // Initial location and data fetch
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationPermission(status === "granted");
+
+        if (status === "granted") {
+          try {
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+            setLocation(location);
+            // Initial fetch after getting location
+            await fetchMerchants(1, true);
+          } catch (error) {
+            console.error("Error getting location:", error);
+            setLocationError(
+              "Could not get your current location. Please try again."
+            );
+            setLoading(false);
+          }
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error requesting location permission:", error);
+        setLocationError("Error accessing location services");
+        setLoading(false);
+      }
     })();
   }, []);
 
+  // Refetch when search query changes
+  useEffect(() => {
+    if (location) {
+      setPage(1);
+      setLoading(true);
+      fetchMerchants(1, true);
+    }
+  }, [searchQuery]);
+
+  // Handle refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setPage(1);
+    await fetchMerchants(1, true);
+  }, [fetchMerchants]);
+
+  // Load more merchants when reaching end of list
+  const loadMore = useCallback(async () => {
+    if (hasMore && !loadingMore && !loading) {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      await fetchMerchants(nextPage);
+      setPage(nextPage);
+    }
+  }, [hasMore, loadingMore, loading, page, fetchMerchants]);
+
+  // Filter merchants by category if needed
   const filteredMerchants = merchants.filter((merchant) => {
-    const matchesSearch = merchant.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || merchant.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return selectedCategory === "All" || merchant.category === selectedCategory;
   });
+
+  // Render footer for list (loading indicator when loading more)
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+
+    return (
+      <View style={styles.loadingMoreContainer}>
+        <ActivityIndicator size="small" color="#0A84FF" />
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.mainContainer}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, isDark && styles.textLight]}>
             Nearby Merchants
           </Text>
-          <TouchableOpacity style={styles.filterButton}>
-            <Sliders size={20} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
-          </TouchableOpacity>
         </View>
 
         {/* Search Input */}
@@ -108,26 +184,29 @@ export default function MerchantsScreen() {
           style={styles.searchInput}
           outlineStyle={styles.searchInputOutline}
           left={
-            <TextInput.Icon icon={() => <Search size={20} color="#0A84FF" />} />
+            <TextInput.Icon
+              icon={() => <Search size={20} color={theme.colors.primary} />}
+            />
           }
         />
 
         {/* Categories */}
-        <ScrollView
+        <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ height: 40 }}
           contentContainerStyle={styles.categoriesContainer}
-        >
-          {categories.map((category) => (
+          data={categories}
+          keyExtractor={(item) => item}
+          renderItem={({ item: category }) => (
             <Chip
-              key={category}
               selected={selectedCategory === category}
               onPress={() => setSelectedCategory(category)}
               style={[
                 styles.categoryChip,
                 selectedCategory === category && styles.selectedCategoryChip,
               ]}
-              selectedColor="#0A84FF"
+              selectedColor={theme.colors.primary}
               textStyle={[
                 styles.categoryChipText,
                 selectedCategory === category &&
@@ -136,66 +215,54 @@ export default function MerchantsScreen() {
             >
               {category}
             </Chip>
-          ))}
-        </ScrollView>
+          )}
+        />
 
-        {/* Map View */}
-        <Card style={[styles.mapCard, isDark && styles.cardDark]}>
-          {locationPermission === false ? (
-            <View style={styles.locationPermissionContainer}>
-              <MapPin size={32} color="#AFAFAF" />
-              <Text
-                style={[
-                  styles.locationPermissionText,
-                  isDark && styles.textLight,
-                ]}
-              >
-                Location access is required to show nearby merchants
-              </Text>
+        {/* Location Status Card */}
+        <Card style={[styles.statusCard, isDark && styles.cardDark]}>
+          <View style={styles.locationStatusContainer}>
+            <MapPin size={20} color={theme.colors.primary} />
+            <Text
+              style={[styles.locationStatusText, isDark && styles.textLight]}
+            >
+              {locationPermission === false
+                ? "Location access is required to find nearby merchants"
+                : locationError
+                ? locationError
+                : location
+                ? `Using your location: ${location.coords.latitude.toFixed(
+                    4
+                  )}, ${location.coords.longitude.toFixed(4)}`
+                : "Getting your location..."}
+            </Text>
+            {locationPermission === false && (
               <TouchableOpacity
                 style={styles.locationPermissionButton}
                 onPress={async () => {
                   const { status } =
                     await Location.requestForegroundPermissionsAsync();
                   setLocationPermission(status === "granted");
+                  if (status === "granted") {
+                    try {
+                      const location = await Location.getCurrentPositionAsync(
+                        {}
+                      );
+                      setLocation(location);
+                      fetchMerchants(1, true);
+                    } catch (error) {
+                      setLocationError(
+                        "Could not get your location. Please try again."
+                      );
+                    }
+                  }
                 }}
               >
                 <Text style={styles.locationPermissionButtonText}>
-                  Grant Location Access
+                  Grant Access
                 </Text>
               </TouchableOpacity>
-            </View>
-          ) : (
-            <MapView
-              style={styles.map}
-              provider={PROVIDER_GOOGLE}
-              initialRegion={mapRegion}
-              region={mapRegion}
-            >
-              {location && (
-                <Marker
-                  coordinate={{
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                  }}
-                  pinColor="#0A84FF"
-                  title="Your Location"
-                />
-              )}
-
-              {filteredMerchants.map((merchant) => (
-                <Marker
-                  key={merchant.id}
-                  coordinate={{
-                    latitude: merchant.latitude,
-                    longitude: merchant.longitude,
-                  }}
-                  title={merchant.name}
-                  description={merchant.category}
-                />
-              ))}
-            </MapView>
-          )}
+            )}
+          </View>
         </Card>
 
         {/* Merchants List */}
@@ -204,53 +271,63 @@ export default function MerchantsScreen() {
             <Text style={[styles.merchantsTitle, isDark && styles.textLight]}>
               {filteredMerchants.length} Merchants Found
             </Text>
-            <TouchableOpacity>
-              <Text style={styles.sortText}>Sort by Distance</Text>
-            </TouchableOpacity>
           </View>
-
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#0A84FF" />
             </View>
           ) : filteredMerchants.length > 0 ? (
-            <View style={styles.merchantsList}>
-              {filteredMerchants.map((merchant) => (
+            <FlatList
+              data={filteredMerchants}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item: merchant }) => (
                 <Card
-                  key={merchant.id}
                   style={[styles.merchantCard, isDark && styles.cardDark]}
                   onPress={() => router.push(`/merchants/${merchant.id}`)}
                 >
                   <View style={styles.merchantCardContent}>
                     <Image
-                      source={{ uri: merchant.image }}
+                      source={
+                        merchant.image
+                          ? { uri: merchant.image }
+                          : require("@/assets/images/adaptive-icon.png") // update path as needed
+                      }
                       style={styles.merchantImage}
                     />
+
                     <View style={styles.merchantDetails}>
                       <Text
                         style={[
                           styles.merchantName,
                           isDark && styles.textLight,
                         ]}
+                        numberOfLines={1}
                       >
-                        {merchant.name}
+                        {String(merchant.name)}
                       </Text>
+
                       <View style={styles.merchantCategory}>
                         <Text style={styles.merchantCategoryText}>
-                          {merchant.category}
+                          {String(merchant.category || "Uncategorized")}
                         </Text>
                       </View>
+
                       <View style={styles.merchantInfo}>
-                        <View style={styles.merchantRating}>
-                          <Star size={16} color="#FFB800" fill="#FFB800" />
-                          <Text style={styles.merchantRatingText}>
-                            {merchant.rating}
-                          </Text>
-                        </View>
+                        {merchant.rating != null && (
+                          <View style={styles.merchantRating}>
+                            <Star size={16} color="#FFB800" fill="#FFB800" />
+                            <Text style={styles.merchantRatingText}>
+                              {String(merchant.rating)}
+                            </Text>
+                          </View>
+                        )}
+
                         <View style={styles.merchantDistance}>
                           <MapPin size={14} color="#6B6B6B" />
                           <Text style={styles.merchantDistanceText}>
-                            {merchant.distance}
+                            {merchant.distance != null
+                              ? `${merchant.distance.toFixed(1)} km`
+                              : "N/A"}
                           </Text>
                         </View>
                       </View>
@@ -258,18 +335,31 @@ export default function MerchantsScreen() {
                     <ChevronRight size={16} color="#AFAFAF" />
                   </View>
                 </Card>
-              ))}
-            </View>
+              )}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={renderFooter}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={["#0A84FF"]}
+                />
+              }
+              contentContainerStyle={styles.merchantsList}
+            />
           ) : (
             <View style={styles.emptyStateContainer}>
-              <MapPin size={48} color="#AFAFAF" />
+              <MapPin size={48} color={theme.colors.primary} />
               <Text style={styles.emptyStateText}>
-                No merchants found matching your search
+                {locationPermission === false
+                  ? "Location access is required to find nearby merchants"
+                  : "No merchants found matching your search"}
               </Text>
             </View>
           )}
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -282,13 +372,9 @@ const styles = StyleSheet.create({
   containerDark: {
     backgroundColor: "#121212",
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
+  mainContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 100,
   },
   header: {
     flexDirection: "row",
@@ -301,14 +387,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "#0A0A0A",
   },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   searchInput: {
     marginBottom: 16,
     backgroundColor: "#FFFFFF",
@@ -317,61 +395,62 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   categoriesContainer: {
-    paddingVertical: 8,
+    padding: 4,
+    marginBottom: 16,
   },
   categoryChip: {
     marginRight: 8,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: theme.colors.secondaryContainer,
+    justifyContent: "center",
+    height: 32,
   },
   selectedCategoryChip: {
-    backgroundColor: "#EBF6FF",
+    backgroundColor: theme.colors.primaryContainer,
   },
   categoryChipText: {
     fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: "#6B6B6B",
+    color: theme.colors.primary,
   },
   selectedCategoryChipText: {
-    color: "#0A84FF",
+    color: theme.colors.primary,
   },
-  mapCard: {
+  statusCard: {
+    marginTop: 16,
     marginBottom: 16,
     borderRadius: 12,
     overflow: "hidden",
   },
   cardDark: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.colors.primaryContainer,
   },
-  map: {
-    height: MAP_HEIGHT,
-  },
-  locationPermissionContainer: {
-    height: MAP_HEIGHT,
-    justifyContent: "center",
-    alignItems: "center",
+  locationStatusContainer: {
     padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
-  locationPermissionText: {
+  locationStatusText: {
     fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: "#0A0A0A",
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 16,
+    color: theme.colors.primary,
+    marginLeft: 8,
+    flex: 1,
   },
   locationPermissionButton: {
-    backgroundColor: "#0A84FF",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    backgroundColor: theme.colors.primaryContainer,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginLeft: 8,
   },
   locationPermissionButtonText: {
     fontFamily: "Inter-Medium",
-    fontSize: 14,
+    fontSize: 12,
     color: "#FFFFFF",
   },
   merchantsContainer: {
-    marginBottom: 24,
+    // flex: 1,
   },
   merchantsHeader: {
     flexDirection: "row",
@@ -382,18 +461,15 @@ const styles = StyleSheet.create({
   merchantsTitle: {
     fontFamily: "Inter-SemiBold",
     fontSize: 18,
-    color: "#0A0A0A",
+    color: theme.colors.secondary,
   },
-  sortText: {
-    fontFamily: "Inter-Medium",
-    fontSize: 14,
-    color: "#0A84FF",
+  merchantsList: {
+    paddingBottom: 20,
   },
-  merchantsList: {},
   merchantCard: {
     marginBottom: 12,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.colors.secondaryContainer,
     elevation: 2,
   },
   merchantCardContent: {
@@ -406,6 +482,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     marginRight: 12,
+    backgroundColor: theme.colors.primaryContainer,
   },
   merchantDetails: {
     flex: 1,
@@ -458,11 +535,15 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
   },
+  loadingMoreContainer: {
+    padding: 10,
+    alignItems: "center",
+  },
   emptyStateContainer: {
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: theme.colors.primaryContainer,
     borderRadius: 12,
   },
   emptyStateText: {

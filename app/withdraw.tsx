@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from "react";
 import {
   View,
@@ -7,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import {
   ChevronLeft,
   CreditCard,
-  User,
   IndianRupee,
   ChevronDown,
   ChevronUp,
@@ -30,6 +31,8 @@ import {
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import { theme } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 
 export default function WithdrawScreen() {
   const { colorScheme } = useTheme();
@@ -40,8 +43,11 @@ export default function WithdrawScreen() {
   const [showUPIInfo, setShowUPIInfo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [withdrawalDetails, setWithdrawalDetails] = useState(null);
+  const [error, setError] = useState("");
+  const { user } = useAuth();
 
-  const availableBalance = 1245.85;
+  const availableBalance = parseInt(user.balance) || 0;
   const predefinedAmounts = [200, 500, 1000];
 
   const handleAmountSelection = (selectedAmount: number) => {
@@ -51,16 +57,37 @@ export default function WithdrawScreen() {
     setAmount(selectedAmount.toString());
   };
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     setLoading(true);
+    setError("");
 
-    // Simulate API call for withdrawal
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_REST_API}/api/wallet/withdraw`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            amount: amount,
+            upiId: upiId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to process withdrawal");
+      }
+
+      setWithdrawalDetails(data.withdrawal);
       setShowSuccessDialog(true);
 
       // Auto-dismiss after 3 seconds
@@ -68,7 +95,18 @@ export default function WithdrawScreen() {
         setShowSuccessDialog(false);
         router.replace("/(tabs)/wallet");
       }, 3000);
-    }, 1500);
+    } catch (err) {
+      setError(err.message || "An error occurred during withdrawal");
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+      Alert.alert(
+        "Withdrawal Failed",
+        err.message || "An error occurred during withdrawal"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isWithdrawDisabled = () => {
@@ -94,7 +132,10 @@ export default function WithdrawScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ChevronLeft size={24} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
+          <ChevronLeft
+            size={24}
+            color={isDark ? theme.colors.primary : theme.colors.secondary}
+          />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, isDark && styles.textLight]}>
           Withdraw Funds
@@ -134,7 +175,9 @@ export default function WithdrawScreen() {
               placeholder="Enter amount"
               left={
                 <TextInput.Icon
-                  icon={() => <IndianRupee size={20} color="#0A84FF" />}
+                  icon={() => (
+                    <IndianRupee size={20} color={theme.colors.primary} />
+                  )}
                 />
               }
               style={styles.input}
@@ -146,7 +189,7 @@ export default function WithdrawScreen() {
               </Text>
             )}
             <Text style={styles.helperText}>
-              Min: ₹100 • Max: ₹10,000 per transaction
+              Min: ₹1 • Max: ₹10,000 per transaction
             </Text>
 
             {/* Predefined Amounts */}
@@ -162,7 +205,7 @@ export default function WithdrawScreen() {
                     amount === predefinedAmount.toString() &&
                       styles.selectedAmountChip,
                   ]}
-                  selectedColor="#0A84FF"
+                  selectedColor={theme.colors.primary}
                 >
                   ₹{predefinedAmount}
                 </Chip>
@@ -182,7 +225,9 @@ export default function WithdrawScreen() {
               placeholder="yourname@upi"
               left={
                 <TextInput.Icon
-                  icon={() => <CreditCard size={20} color="#0A84FF" />}
+                  icon={() => (
+                    <CreditCard size={20} color={theme.colors.primary} />
+                  )}
                 />
               }
               style={styles.input}
@@ -199,9 +244,9 @@ export default function WithdrawScreen() {
             >
               <Text style={styles.upiInfoTitle}>What is a UPI ID?</Text>
               {showUPIInfo ? (
-                <ChevronUp size={16} color="#0A84FF" />
+                <ChevronUp size={16} color={theme.colors.primary} />
               ) : (
-                <ChevronDown size={16} color="#0A84FF" />
+                <ChevronDown size={16} color={theme.colors.primary} />
               )}
             </TouchableOpacity>
 
@@ -217,6 +262,13 @@ export default function WithdrawScreen() {
               </View>
             )}
           </View>
+
+          {/* Error Message */}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorMessage}>{error}</Text>
+            </View>
+          ) : null}
 
           {/* Withdrawal Time Note */}
           <View style={styles.noteContainer}>
@@ -247,7 +299,7 @@ export default function WithdrawScreen() {
           style={styles.successDialog}
         >
           <LinearGradient
-            colors={["#0A84FF", "#30D158"]}
+            colors={["#e8cc6d", "#D4AF37"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.successGradient}
@@ -257,8 +309,14 @@ export default function WithdrawScreen() {
             </View>
             <Text style={styles.successTitle}>Withdrawal Initiated!</Text>
             <Text style={styles.successText}>
-              ₹{amount} will be transferred to {upiId} within 24-48 hours
+              ₹{withdrawalDetails?.amount || amount} will be transferred to{" "}
+              {withdrawalDetails?.upiId || upiId} within 24-48 hours
             </Text>
+            {withdrawalDetails?.id && (
+              <Text style={styles.transactionId}>
+                Transaction ID: {withdrawalDetails.id}
+              </Text>
+            )}
           </LinearGradient>
         </Dialog>
       </Portal>
@@ -310,10 +368,10 @@ const styles = StyleSheet.create({
   balanceCard: {
     marginBottom: 24,
     borderRadius: 12,
-    backgroundColor: "#0A84FF",
+    backgroundColor: theme.colors.primary,
   },
   cardDark: {
-    backgroundColor: "#0A84FF", // Keep the same color for visibility
+    backgroundColor: theme.colors.primary,
   },
   balanceCardContent: {
     padding: 16,
@@ -352,10 +410,21 @@ const styles = StyleSheet.create({
     color: "#FF3B30",
     marginTop: 8,
   },
+  errorContainer: {
+    backgroundColor: "#FFEEEE",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorMessage: {
+    fontFamily: "Inter-Regular",
+    fontSize: 14,
+    color: "#FF3B30",
+  },
   helperText: {
     fontFamily: "Inter-Regular",
     fontSize: 14,
-    color: "#6B6B6B",
+    color: theme.colors.outline,
     marginTop: 8,
   },
   predefinedAmounts: {
@@ -366,7 +435,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   selectedAmountChip: {
-    backgroundColor: "#EBF6FF",
+    backgroundColor: theme.colors.primaryContainer,
   },
   upiInfoHeader: {
     flexDirection: "row",
@@ -377,10 +446,10 @@ const styles = StyleSheet.create({
   upiInfoTitle: {
     fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: "#0A84FF",
+    color: theme.colors.primary,
   },
   upiInfoContent: {
-    backgroundColor: "#EBF6FF",
+    backgroundColor: theme.colors.primaryContainer,
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
@@ -443,6 +512,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     textAlign: "center",
     opacity: 0.9,
+    marginBottom: 8,
+  },
+  transactionId: {
+    fontFamily: "Inter-Regular",
+    fontSize: 14,
+    color: "#FFFFFF",
+    textAlign: "center",
+    opacity: 0.8,
   },
   textLight: {
     color: "#FFFFFF",

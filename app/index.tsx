@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { View, ActivityIndicator } from "react-native";
 
 export default function Index() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return (

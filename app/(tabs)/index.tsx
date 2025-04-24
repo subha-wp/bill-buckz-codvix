@@ -18,6 +18,7 @@ import { theme } from "@/constants/theme";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { BalanceCard } from "@/components/shared/BalanceCard";
 import { BillCard } from "@/components/shared/BillCard";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomeScreen() {
   const { colorScheme } = useTheme();
@@ -36,6 +37,9 @@ export default function HomeScreen() {
     }, 1000);
   }, []);
 
+  const { user } = useAuth();
+  const balance = parseInt(user.balance);
+
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <StatusBar style={isDark ? "light" : "dark"} />
@@ -46,7 +50,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <HomeHeader />
-        <BalanceCard balance="1,245.85" label="Available Cashback" />
+        <BalanceCard balance={balance} label="Available Cashback" />
 
         {/* Recent Bills */}
         <View style={styles.section}>
