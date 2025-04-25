@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import * as SecureStore from "expo-secure-store";
 import {
   View,
   Text,
@@ -74,7 +73,7 @@ export default function Register() {
 
       if (result.user) {
         await setUserFromLogin(result.user);
-        router.replace("/(tabs)");
+        router.replace("/(auth)/permissions");
       }
     } catch (error) {
       console.error("Registration failed", error);

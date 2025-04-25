@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Platform,
   Image,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -14,17 +15,16 @@ import { Button } from "react-native-paper";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
-import * as Contacts from "expo-contacts";
 import { Camera } from "expo-camera";
 import {
   Camera as CameraIcon,
   MapPin,
   Bell,
-  Users,
   CircleCheck as CheckCircle,
   Circle as XCircle,
 } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
+import { theme } from "@/constants/theme";
 
 export default function PermissionsScreen() {
   const { colorScheme } = useTheme();
@@ -35,29 +35,38 @@ export default function PermissionsScreen() {
     camera: false,
     location: false,
     notifications: false,
-    contacts: false,
   });
 
   const [loading, setLoading] = useState(false);
+  const [permissionsRequested, setPermissionsRequested] = useState(false);
 
-  const requestPermissions = async () => {
+  // Check notification permission status when component mounts and after permissions are requested
+  useEffect(() => {
+    const checkPermissions = async () => {
+      // Check notification permission
+      const notificationStatus = await Notifications.getPermissionsAsync();
+
+      // Check camera permission
+      const cameraStatus = await Camera.getCameraPermissionsAsync();
+
+      // Check location permission
+      const locationStatus = await Location.getForegroundPermissionsAsync();
+
+      setPermissions({
+        notifications: notificationStatus.status === "granted",
+        camera: cameraStatus.status === "granted",
+        location: locationStatus.status === "granted",
+      });
+    };
+
+    checkPermissions();
+  }, [permissionsRequested]);
+
+  const requestAllPermissions = async () => {
     setLoading(true);
 
-    // Camera Permission
-    const cameraPermission = await Camera.requestCameraPermissionsAsync();
-    if (cameraPermission.granted) {
-      setPermissions((prev) => ({ ...prev, camera: true }));
-    }
-
-    // Location Permission
-    const locationPermission =
-      await Location.requestForegroundPermissionsAsync();
-    if (locationPermission.granted) {
-      setPermissions((prev) => ({ ...prev, location: true }));
-    }
-
-    // Notification Permission (iOS only, Android grants by default)
-    if (Platform.OS === "ios") {
+    try {
+      // Request notification permission (required)
       const notificationPermission =
         await Notifications.requestPermissionsAsync({
           ios: {
@@ -67,29 +76,55 @@ export default function PermissionsScreen() {
             allowAnnouncements: true,
           },
         });
-      if (notificationPermission.granted) {
-        setPermissions((prev) => ({ ...prev, notifications: true }));
-      }
-    } else {
-      setPermissions((prev) => ({ ...prev, notifications: true }));
-    }
 
-    // Contacts Permission
-    const contactsPermission = await Contacts.requestPermissionsAsync();
-    if (contactsPermission.granted) {
-      setPermissions((prev) => ({ ...prev, contacts: true }));
-    }
+      // Request camera permission (optional)
+      const cameraPermission = await Camera.requestCameraPermissionsAsync();
 
-    setLoading(false);
+      // Request location permission (optional)
+      const locationPermission =
+        await Location.requestForegroundPermissionsAsync();
+
+      // Update state to trigger the useEffect that checks permissions
+      setPermissionsRequested(true);
+    } catch (error) {
+      console.error("Error requesting permissions:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleContinue = () => {
+    if (!permissions.notifications) {
+      Alert.alert(
+        "Notification Permission Required",
+        "Push notifications are required for this app. Please grant notification permission to continue.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     router.replace("/(tabs)");
   };
 
-  const allPermissionsGranted = Object.values(permissions).every(
-    (permission) => permission
-  );
+  const handleSkip = () => {
+    if (!permissions.notifications) {
+      Alert.alert(
+        "Notification Permission Required",
+        "Push notifications are required for this app. Please grant notification permission to continue.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // User can skip even if camera and location permissions are not granted
+    router.replace("/(tabs)");
+  };
+
+  // Determine which buttons to show based on permissions state
+  const showPermissionButton =
+    !permissionsRequested || !permissions.notifications;
+  const showSkipButton = permissionsRequested && permissions.notifications;
+  const showContinueButton = permissionsRequested;
 
   return (
     <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
@@ -117,7 +152,31 @@ export default function PermissionsScreen() {
 
         {/* Permissions List */}
         <View style={styles.permissionsList}>
-          {/* Camera Permission */}
+          {/* Notification Permission (Required) */}
+          <View
+            style={[styles.permissionItem, isDark && styles.permissionItemDark]}
+          >
+            <View style={styles.permissionIcon}>
+              <Bell size={24} color="#0A84FF" />
+            </View>
+            <View style={styles.permissionInfo}>
+              <Text
+                style={[styles.permissionTitle, isDark && styles.textLight]}
+              >
+                Push Notifications
+              </Text>
+              <Text style={styles.permissionDescription}>
+                Get instant updates about cashback and offers (Required)
+              </Text>
+            </View>
+            {permissions.notifications ? (
+              <CheckCircle size={24} color="#30D158" />
+            ) : (
+              <XCircle size={24} color="#FF3B30" />
+            )}
+          </View>
+
+          {/* Camera Permission (Optional) */}
           <View
             style={[styles.permissionItem, isDark && styles.permissionItemDark]}
           >
@@ -141,7 +200,7 @@ export default function PermissionsScreen() {
             )}
           </View>
 
-          {/* Location Permission */}
+          {/* Location Permission (Optional) */}
           <View
             style={[styles.permissionItem, isDark && styles.permissionItemDark]}
           >
@@ -164,54 +223,6 @@ export default function PermissionsScreen() {
               <XCircle size={24} color="#FF3B30" />
             )}
           </View>
-
-          {/* Notifications Permission */}
-          <View
-            style={[styles.permissionItem, isDark && styles.permissionItemDark]}
-          >
-            <View style={styles.permissionIcon}>
-              <Bell size={24} color="#0A84FF" />
-            </View>
-            <View style={styles.permissionInfo}>
-              <Text
-                style={[styles.permissionTitle, isDark && styles.textLight]}
-              >
-                Push Notifications
-              </Text>
-              <Text style={styles.permissionDescription}>
-                Get instant updates about cashback and offers
-              </Text>
-            </View>
-            {permissions.notifications ? (
-              <CheckCircle size={24} color="#30D158" />
-            ) : (
-              <XCircle size={24} color="#FF3B30" />
-            )}
-          </View>
-
-          {/* Contacts Permission */}
-          <View
-            style={[styles.permissionItem, isDark && styles.permissionItemDark]}
-          >
-            <View style={styles.permissionIcon}>
-              <Users size={24} color="#0A84FF" />
-            </View>
-            <View style={styles.permissionInfo}>
-              <Text
-                style={[styles.permissionTitle, isDark && styles.textLight]}
-              >
-                Contacts Access
-              </Text>
-              <Text style={styles.permissionDescription}>
-                Share cashback opportunities with friends
-              </Text>
-            </View>
-            {permissions.contacts ? (
-              <CheckCircle size={24} color="#30D158" />
-            ) : (
-              <XCircle size={24} color="#FF3B30" />
-            )}
-          </View>
         </View>
 
         {/* Privacy Note */}
@@ -223,23 +234,38 @@ export default function PermissionsScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actions}>
-          <Button
-            mode="contained"
-            onPress={requestPermissions}
-            style={styles.button}
-            loading={loading}
-          >
-            Allow Permissions
-          </Button>
+          {showPermissionButton && (
+            <Button
+              mode="contained"
+              onPress={requestAllPermissions}
+              style={styles.button}
+              loading={loading}
+            >
+              Allow All Permissions
+            </Button>
+          )}
 
-          <Button
-            mode="outlined"
-            onPress={handleContinue}
-            style={styles.skipButton}
-            disabled={loading}
-          >
-            {allPermissionsGranted ? "Continue" : "Skip for Now"}
-          </Button>
+          {showContinueButton && (
+            <Button
+              mode="contained"
+              onPress={handleContinue}
+              style={[styles.button, styles.continueButton]}
+              disabled={!permissions.notifications}
+            >
+              Continue
+            </Button>
+          )}
+
+          {showSkipButton && !permissions.camera && !permissions.location && (
+            <Button
+              mode="outlined"
+              onPress={handleSkip}
+              style={styles.skipButton}
+              disabled={loading || !permissions.notifications}
+            >
+              Skip for Now
+            </Button>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -332,6 +358,10 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 8,
     paddingVertical: 8,
+    marginBottom: 12,
+  },
+  continueButton: {
+    backgroundColor: theme.colors.primary,
   },
   skipButton: {
     borderRadius: 8,
