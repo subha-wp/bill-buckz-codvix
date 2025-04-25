@@ -39,6 +39,7 @@ export const theme = {
     primaryContainer: "#FFF8E1", // Very light gold
     secondary: "#000000", // Black
     secondaryContainer: "#F5F5F5", // Light gray/off-white
+    firstGradient: "#e8cc4d",
     tertiary: "#9D8221", // Darker gold
     tertiaryContainer: "#FFF8DC", // Cream/light gold
     error: "#B71C1C", // Dark red
@@ -63,6 +64,7 @@ export const darkTheme = {
     primaryContainer: "#3A3000", // Very dark gold
     secondary: "#FFFFFF", // White
     secondaryContainer: "#2A2A2A", // Dark gray
+    firstGradient: "#e8cc4d",
     tertiary: "#BFA730", // Slightly lighter gold
     tertiaryContainer: "#2C2500", // Very dark gold
     error: "#CF6679", // Pink/red

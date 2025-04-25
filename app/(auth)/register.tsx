@@ -24,6 +24,7 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { theme } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -37,6 +38,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const router = useRouter();
+  const { setUserFromLogin } = useAuth();
 
   const handleRegister = async () => {
     if (Platform.OS !== "web") {
@@ -71,7 +73,7 @@ export default function Register() {
       }
 
       if (result.user) {
-        await SecureStore.setItemAsync("user", JSON.stringify(result.user));
+        await setUserFromLogin(result.user);
         router.replace("/(tabs)");
       }
     } catch (error) {

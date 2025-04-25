@@ -1,36 +1,14 @@
-import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { useAuth } from "@/context/AuthContext";
+import { theme } from "@/constants/theme";
 
 export function HomeHeader() {
   const { colorScheme } = useTheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
-  const [userName, setUserName] = useState<string>("");
-  const [avatar, setAvatar] = useState<string>("");
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const storedUser = await SecureStore.getItemAsync("user");
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          const firstName = parsedUser.name?.split(" ")[0] || "User";
-          const capitalized =
-            firstName.charAt(0).toUpperCase() +
-            firstName.slice(1).toLowerCase();
-          setUserName(capitalized);
-          setAvatar(parsedUser.avatarUrl);
-        } catch (err) {
-          console.error("Failed to parse stored user", err);
-        }
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const { user } = useAuth();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -43,19 +21,23 @@ export function HomeHeader() {
     <View style={styles.header}>
       <View>
         <Text style={[styles.greeting, isDark && styles.textLight]}>
-          {getGreeting()}, {userName || "User"}
+          {getGreeting()},{" "}
+          {user.name
+            ? user.name.split(" ")[0].charAt(0).toUpperCase() +
+              user.name.split(" ")[0].slice(1).toLowerCase()
+            : "User"}
         </Text>
       </View>
       <TouchableOpacity
         style={styles.profileButton}
         onPress={() => router.push("/profile")}
       >
-        {avatar ? (
-          <Image source={{ uri: avatar }} style={styles.avatarImage} />
+        {user.avatarUrl ? (
+          <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarText}>
-              {userName?.charAt(0).toUpperCase() || "U"}
+              {user.name?.charAt(0).toUpperCase() || "U"}
             </Text>
           </View>
         )}
@@ -96,7 +78,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#D0D0D0",
+    backgroundColor: theme.colors.secondaryContainer,
     justifyContent: "center",
     alignItems: "center",
   },

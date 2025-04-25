@@ -133,7 +133,7 @@ export default function WalletScreen() {
 
         {/* Balance Card */}
         <LinearGradient
-          colors={["#e8cc6d", "#D4AF37"]}
+          colors={[theme.colors.firstGradient, theme.colors.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.balanceCard}
@@ -360,13 +360,6 @@ export default function WalletScreen() {
               <View style={styles.emptyStateContainer}>
                 <ArrowDown size={48} color="#AFAFAF" />
                 <Text style={styles.emptyStateText}>No cashbacks yet</Text>
-                <Button
-                  mode="contained"
-                  onPress={() => router.push("/cashbacks")}
-                  style={styles.emptyStateButton}
-                >
-                  View Cashbacks
-                </Button>
               </View>
             )}
           </View>

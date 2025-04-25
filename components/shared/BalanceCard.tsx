@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowUp, Receipt } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { theme } from "@/constants/theme";
 
 interface BalanceCardProps {
   balance: string;
@@ -19,7 +20,7 @@ export function BalanceCard({
 
   return (
     <LinearGradient
-      colors={["#e8cc6d", "#D4AF37"]}
+      colors={[theme.colors.firstGradient, theme.colors.primary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.balanceCard}

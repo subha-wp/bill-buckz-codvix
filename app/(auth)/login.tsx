@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import * as SecureStore from "expo-secure-store";
 import {
   View,
   Text,
@@ -16,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Lock, Phone } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { theme } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -23,6 +23,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { setUserFromLogin } = useAuth();
 
   const handleLogin = async () => {
     if (Platform.OS !== "web") {
@@ -47,8 +48,7 @@ export default function Login() {
 
       const data = await response.json();
       if (response.ok) {
-        await SecureStore.setItemAsync("user", JSON.stringify(data.user));
-
+        await setUserFromLogin(data.user);
         router.replace("/(tabs)");
       } else {
         setError(data.message || "Login failed. Please try again.");

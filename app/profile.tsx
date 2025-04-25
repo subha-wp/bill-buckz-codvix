@@ -1,6 +1,5 @@
 // @ts-nocheck
-import React, { useEffect, useState } from "react";
-import * as SecureStore from "expo-secure-store";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -24,43 +23,21 @@ import {
   ChevronLeft,
 } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
-import { useAuth } from "@/context/AuthContext";
 import { Divider, Switch, Card } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { theme } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ProfileScreen() {
   const { colorScheme, toggleColorScheme } = useTheme();
   const isDark = colorScheme === "dark";
-  const [user, setUser] = useState<{
-    name: string;
-    phoneNumber: string;
-    referralCode: string;
-    avatarUrl: string;
-  } | null>(null);
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled);
   };
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const storedUser = await SecureStore.getItemAsync("user");
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          setUser(parsed);
-        } catch (err) {
-          console.error("Failed to parse user", err);
-        }
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   const handleShare = async () => {
     try {
@@ -95,13 +72,7 @@ export default function ProfileScreen() {
             Profile
           </Text>
 
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={async () => {
-              await SecureStore.deleteItemAsync("user");
-              router.replace("/(auth)/login");
-            }}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
             <LogOut
               size={20}
               color={isDark ? theme.colors.primary : theme.colors.primary}

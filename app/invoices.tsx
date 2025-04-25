@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -224,7 +223,7 @@ export default function InvoicesScreen() {
 
         {/* Summary Card */}
         <LinearGradient
-          colors={["#e8cc6d", "#D4AF37"]}
+          colors={[theme.colors.firstGradient, theme.colors.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.summaryCard}
@@ -273,14 +272,6 @@ export default function InvoicesScreen() {
           >
             Upload Invoice
           </Button>
-          {/* <Button
-            mode="outlined"
-            icon={() => <FileText size={16} color={theme.colors.primary} />}
-            style={styles.historyButton}
-            onPress={() => router.push("/cashbacks")}
-          >
-            Cashbacks
-          </Button> */}
         </View>
 
         {/* Tabs */}
@@ -522,14 +513,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: theme.colors.secondaryContainer,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -542,7 +531,6 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   summaryCard: {
-    backgroundColor: "#D4AF37",
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,

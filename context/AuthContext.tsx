@@ -56,7 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signOut = async () => {
     await SecureStore.deleteItemAsync("user");
-    setUser(null);
     router.replace("/(auth)/login");
   };
 

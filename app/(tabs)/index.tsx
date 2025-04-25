@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Receipt } from "lucide-react-native";
@@ -68,6 +69,9 @@ export default function HomeScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={fetchData} />
+        }
       >
         <HomeHeader />
         <BalanceCard
@@ -110,10 +114,10 @@ export default function HomeScreen() {
               <Text style={styles.emptyStateText}>No bills yet</Text>
               <Button
                 mode="contained"
-                onPress={() => router.push("/(tabs)/scan")}
+                onPress={() => router.push("/upload-invoice")}
                 style={styles.emptyStateButton}
               >
-                Scan Your First Bill
+                Add Your First Bill
               </Button>
             </View>
           )}
