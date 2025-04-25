@@ -4,7 +4,7 @@ import { View, ActivityIndicator } from "react-native";
 import { theme } from "@/constants/theme";
 
 export default function Index() {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (

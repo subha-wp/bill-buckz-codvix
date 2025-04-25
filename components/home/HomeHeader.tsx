@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
-import { User } from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 
 export function HomeHeader() {
@@ -10,6 +9,7 @@ export function HomeHeader() {
   const isDark = colorScheme === "dark";
   const router = useRouter();
   const [userName, setUserName] = useState<string>("");
+  const [avatar, setAvatar] = useState<string>("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -22,6 +22,7 @@ export function HomeHeader() {
             firstName.charAt(0).toUpperCase() +
             firstName.slice(1).toLowerCase();
           setUserName(capitalized);
+          setAvatar(parsedUser.avatarUrl);
         } catch (err) {
           console.error("Failed to parse stored user", err);
         }
@@ -49,7 +50,15 @@ export function HomeHeader() {
         style={styles.profileButton}
         onPress={() => router.push("/profile")}
       >
-        <User size={20} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
+        {avatar ? (
+          <Image source={{ uri: avatar }} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatarFallback}>
+            <Text style={styles.avatarText}>
+              {userName?.charAt(0).toUpperCase() || "U"}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -77,5 +86,23 @@ const styles = StyleSheet.create({
   },
   textLight: {
     color: "#FFFFFF",
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  avatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#D0D0D0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    fontFamily: "Inter-Bold",
+    fontSize: 16,
+    color: "#000000",
   },
 });

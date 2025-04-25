@@ -215,7 +215,7 @@ export default function InvoicesScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <ChevronLeft size={24} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
+            <ChevronLeft size={24} color={theme.colors.primary} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, isDark && styles.textLight]}>
             Invoices
@@ -273,14 +273,14 @@ export default function InvoicesScreen() {
           >
             Upload Invoice
           </Button>
-          <Button
+          {/* <Button
             mode="outlined"
             icon={() => <FileText size={16} color={theme.colors.primary} />}
             style={styles.historyButton}
             onPress={() => router.push("/cashbacks")}
           >
             Cashbacks
-          </Button>
+          </Button> */}
         </View>
 
         {/* Tabs */}

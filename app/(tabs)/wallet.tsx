@@ -187,14 +187,6 @@ export default function WalletScreen() {
           >
             Withdraw
           </Button>
-          <Button
-            mode="outlined"
-            icon={() => <ArrowDown size={16} color={theme.colors.primary} />}
-            style={styles.historyButton}
-            onPress={() => router.push("/cashbacks")}
-          >
-            History
-          </Button>
         </View>
 
         {/* Tabs */}

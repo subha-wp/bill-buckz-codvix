@@ -25,10 +25,11 @@ export default function EditProfileScreen() {
   const { colorScheme } = useTheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, setUserFromLogin } = useAuth();
 
   const [name, setName] = useState(user?.name || "");
-  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const [avatar, setAvatar] = useState(user?.avatarUrl || null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -40,7 +41,7 @@ export default function EditProfileScreen() {
       type: "image/jpeg",
       name: "avatar.jpg",
     });
-    formData.append("upload_preset", "invoice");
+    formData.append("upload_preset", "invoices");
 
     try {
       const response = await fetch(
@@ -122,7 +123,7 @@ export default function EditProfileScreen() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name,
-            avatar,
+            avatarUrl: avatar,
           }),
         }
       );
@@ -137,19 +138,13 @@ export default function EditProfileScreen() {
       const updatedUser = {
         ...user,
         name,
-        avatar,
+        avatarUrl: avatar,
       };
 
       await SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
 
       // Update global auth context
-      await SecureStore.getItemAsync("user").then((storedUser) => {
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          // Update auth context with the latest user data
-          useAuth().setUserFromLogin(parsedUser);
-        }
-      });
+      setUserFromLogin(updatedUser);
 
       router.back();
     } catch (err) {
@@ -195,6 +190,17 @@ export default function EditProfileScreen() {
             >
               {avatar ? (
                 <Image source={{ uri: avatar }} style={styles.avatar} />
+              ) : name ? (
+                <View
+                  style={[
+                    styles.avatarPlaceholder,
+                    isDark && styles.avatarPlaceholderDark,
+                  ]}
+                >
+                  <Text style={styles.avatarInitial}>
+                    {name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
               ) : (
                 <View
                   style={[
@@ -205,6 +211,7 @@ export default function EditProfileScreen() {
                   <User size={40} color={isDark ? "#FFFFFF" : "#0A0A0A"} />
                 </View>
               )}
+
               <View style={styles.cameraButton}>
                 <Camera size={20} color="#FFFFFF" />
               </View>
@@ -342,6 +349,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 24,
+  },
+  avatarInitial: {
+    fontFamily: "Inter-Bold",
+    fontSize: 32,
+    color: "#0A0A0A",
   },
   backButton: {
     width: 40,

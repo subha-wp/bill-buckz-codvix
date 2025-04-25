@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Share,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -20,6 +21,7 @@ import {
   CircleHelp as HelpCircle,
   Settings,
   Share2,
+  ChevronLeft,
 } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +36,7 @@ export default function ProfileScreen() {
     name: string;
     phoneNumber: string;
     referralCode: string;
+    avatarUrl: string;
   } | null>(null);
   const { signOut } = useAuth();
   const router = useRouter();
@@ -81,9 +84,17 @@ export default function ProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ChevronLeft size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
+
           <Text style={[styles.headerTitle, isDark && styles.textLight]}>
             Profile
           </Text>
+
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={async () => {
@@ -102,7 +113,18 @@ export default function ProfileScreen() {
         <Card style={[styles.profileCard, isDark && styles.cardDark]}>
           <View style={styles.profileCardContent}>
             <View style={styles.profileAvatar}>
-              <User size={32} color="#FFFFFF" />
+              {user?.avatarUrl ? (
+                <Image
+                  source={{ uri: user.avatarUrl }}
+                  style={styles.avatarImageLarge}
+                />
+              ) : user?.name ? (
+                <Text style={styles.avatarTextLarge}>
+                  {user.name.charAt(0).toUpperCase()}
+                </Text>
+              ) : (
+                <User size={32} color="#FFFFFF" />
+              )}
             </View>
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, isDark && styles.textLight]}>
@@ -274,6 +296,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primaryContainer,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarImageLarge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  avatarTextLarge: {
+    fontFamily: "Inter-Bold",
+    fontSize: 20,
+    color: "#FFFFFF",
   },
   headerTitle: {
     fontFamily: "Inter-Bold",
