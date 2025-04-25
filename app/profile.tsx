@@ -246,16 +246,7 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>BillBuckz v1.0.0</Text>
-          <View style={styles.appInfoLinks}>
-            <TouchableOpacity>
-              <Text style={styles.appInfoLink}>Privacy</Text>
-            </TouchableOpacity>
-            <Text style={styles.appInfoDot}>•</Text>
-            <TouchableOpacity>
-              <Text style={styles.appInfoLink}>Terms</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.appInfoText}>BillBuckz v1.0.4</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

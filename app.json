@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bill Buckz",
     "slug": "bill-buckz-codvix",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -21,13 +21,7 @@
       ],
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/adaptive-icon.png",
-          "color": "#22C55E"
-        }
-      ]
+      "@react-native-firebase/messaging"
     ],
     "ios": {
       "supportsTablet": true,
@@ -44,9 +38,7 @@
         "VIBRATE",
         "WAKE_LOCK",
         "RECEIVE_BOOT_COMPLETED",
-        "ACCESS_NOTIFICATION_POLICY",
         "POST_NOTIFICATIONS",
-        "android.permission.PREVENT_POWER_KEY",
         "INTERNET",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
