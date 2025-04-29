@@ -27,8 +27,6 @@ export default function TabLayout() {
         return <HomeIcon size={iconSize} color={iconColor} />;
       case "nearby":
         return <Store size={iconSize} color={iconColor} />;
-      case "merchants":
-        return <Map size={iconSize} color={iconColor} />;
       case "leaderboard":
         return <Trophy size={iconSize} color={iconColor} />;
       case "wallet":
@@ -87,12 +85,7 @@ export default function TabLayout() {
           title: "Products",
         }}
       />
-      <Tabs.Screen
-        name="merchants"
-        options={{
-          title: "Merchants",
-        }}
-      />
+
       <Tabs.Screen
         name="leaderboard"
         options={{

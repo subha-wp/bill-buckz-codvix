@@ -57,7 +57,24 @@ export default function NearbyProductsScreen() {
   });
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const categories = ["All", "General", "Electronics", "Fashion", "Food"];
+  const categories = [
+    "All",
+    "General",
+    "Electronics",
+    "Clothing",
+    "Food",
+    "Beverages",
+    "Home & Kitchen",
+    "Beauty & Personal Care",
+    "Sports & Fitness",
+    "Books",
+    "Toys & Games",
+    "Automotive",
+    "Health & Wellness",
+    "Office Supplies",
+    "Pet Supplies",
+    "Tools & Home Improvement",
+  ];
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   useEffect(() => {
@@ -92,7 +109,7 @@ export default function NearbyProductsScreen() {
 
     try {
       const { latitude, longitude } = location.coords;
-      let url = `${process.env.EXPO_PUBLIC_PRODUCTS_API}/api/products/nearby?lat=${latitude}&lng=${longitude}&radius=5&page=${page}&limit=10`;
+      let url = `${process.env.EXPO_PUBLIC_PRODUCTS_API}/api/products/nearby?lat=${latitude}&lng=${longitude}&radius=15&page=${page}&limit=10`;
 
       if (searchQuery) {
         url += `&search=${encodeURIComponent(searchQuery)}`;
