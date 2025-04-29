@@ -1,13 +1,7 @@
 import React from "react";
 import { StyleSheet, Platform } from "react-native";
 import { Tabs } from "expo-router";
-import {
-  Map,
-  Wallet,
-  Leaf,
-  PhoneIncoming as HomeIcon,
-  Store,
-} from "lucide-react-native";
+import { Wallet, Leaf, Store, Home } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/context/ThemeContext";
 import { theme } from "@/constants/theme";
@@ -30,7 +24,7 @@ export default function TabLayout() {
 
     switch (routeName) {
       case "index":
-        return <HomeIcon size={iconSize} color={iconColor} />;
+        return <Home size={iconSize} color={iconColor} />;
       case "nearby":
         return <Store size={iconSize} color={iconColor} />;
       case "green-impact":
