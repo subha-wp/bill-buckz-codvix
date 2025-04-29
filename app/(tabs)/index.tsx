@@ -19,7 +19,6 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { BalanceCard } from "@/components/shared/BalanceCard";
 import { BillCard } from "@/components/shared/BillCard";
 import { useAuth } from "@/context/AuthContext";
-import { LeaderboardPreview } from "@/components/home/LeaderboardPreview";
 
 export default function HomeScreen() {
   const { colorScheme } = useTheme();
@@ -45,7 +44,6 @@ export default function HomeScreen() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch wallet data
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_REST_API}/api/wallet/?userId=${userId}`
       );
@@ -78,7 +76,7 @@ export default function HomeScreen() {
           balance={walletData.availableBalance}
           label="Available Cashback"
         />
-        <LeaderboardPreview />
+
         {/* Recent Bills */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -92,7 +90,7 @@ export default function HomeScreen() {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={theme.colors.pri} />
+              <ActivityIndicator size="small" color={theme.colors.primary} />
             </View>
           ) : recentInvoices.length > 0 ? (
             <View style={styles.billsList}>

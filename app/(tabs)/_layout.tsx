@@ -1,7 +1,13 @@
 import React from "react";
 import { StyleSheet, Platform } from "react-native";
 import { Tabs } from "expo-router";
-import { Map, Wallet, Trophy, HomeIcon, Store } from "lucide-react-native";
+import {
+  Map,
+  Wallet,
+  Leaf,
+  PhoneIncoming as HomeIcon,
+  Store,
+} from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useTheme } from "@/context/ThemeContext";
 import { theme } from "@/constants/theme";
@@ -27,8 +33,8 @@ export default function TabLayout() {
         return <HomeIcon size={iconSize} color={iconColor} />;
       case "nearby":
         return <Store size={iconSize} color={iconColor} />;
-      case "leaderboard":
-        return <Trophy size={iconSize} color={iconColor} />;
+      case "green-impact":
+        return <Leaf size={iconSize} color={iconColor} />;
       case "wallet":
         return <Wallet size={iconSize} color={iconColor} />;
       default:
@@ -85,11 +91,10 @@ export default function TabLayout() {
           title: "Products",
         }}
       />
-
       <Tabs.Screen
-        name="leaderboard"
+        name="green-impact"
         options={{
-          title: "Leaders",
+          title: "Green Impact",
         }}
       />
       <Tabs.Screen
