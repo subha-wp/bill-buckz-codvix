@@ -1,5 +1,6 @@
-// @ts-nocheck
-import React, { useState, useEffect } from "react";
+//@ts-nocheck
+
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -56,6 +57,7 @@ export default function NearbyProductsScreen() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialFetch, setInitialFetch] = useState(true); // Track initial data fetch
   const [refreshing, setRefreshing] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -98,12 +100,13 @@ export default function NearbyProductsScreen() {
           const coords = JSON.parse(cachedCoords);
           setCoordinates(coords);
           fetchProducts(1, true, coords);
+        } else {
+          // No cached coordinates, we'll need to get location permission
+          await checkLocationPermission();
         }
-        // Check location permission and get current location
-        checkLocationPermission();
       } catch (error) {
         console.error("Error initializing screen:", error);
-        checkLocationPermission(); // Fallback to getting current location
+        await checkLocationPermission(); // Fallback to getting current location
       }
     };
 
@@ -111,7 +114,7 @@ export default function NearbyProductsScreen() {
   }, []);
 
   useEffect(() => {
-    if (coordinates) {
+    if (coordinates && !initialFetch) {
       fetchProducts(1, true);
     }
   }, [searchQuery, selectedCategory]);
@@ -120,7 +123,9 @@ export default function NearbyProductsScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === "granted") {
-        const location = await Location.getCurrentPositionAsync({});
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced, // Balance accuracy and speed
+        });
         const newCoords = {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
@@ -131,17 +136,15 @@ export default function NearbyProductsScreen() {
           "lastKnownLocation",
           JSON.stringify(newCoords)
         );
-        // Only fetch products if we didn't have coordinates before
-        if (!coordinates) {
-          fetchProducts(1, true, newCoords);
-        }
+        // Fetch products with new coordinates
+        fetchProducts(1, true, newCoords);
       } else {
         setLocationError("Location permission not granted");
+        setLoading(false);
       }
     } catch (error) {
       console.error("Error getting location:", error);
       setLocationError("Could not get location");
-    } finally {
       setLoading(false);
     }
   };
@@ -151,7 +154,9 @@ export default function NearbyProductsScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === "granted") {
-        const location = await Location.getCurrentPositionAsync({});
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
         const newCoords = {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
@@ -171,8 +176,8 @@ export default function NearbyProductsScreen() {
   };
 
   const fetchProducts = async (
-    page: number = 1,
-    refresh: boolean = false,
+    page = 1,
+    refresh = false,
     coords: Coordinates | null = null
   ) => {
     if (!coords && !coordinates) return;
@@ -181,7 +186,7 @@ export default function NearbyProductsScreen() {
 
     try {
       const { latitude, longitude } = coordsToUse;
-      let url = `${process.env.EXPO_PUBLIC_PRODUCTS_API}/api/products/nearby?lat=${latitude}&lng=${longitude}&radius=15&page=${page}&limit=10`;
+      let url = `${process.env.EXPO_PUBLIC_PRODUCTS_API}/api/products/nearby?lat=${latitude}&lng=${longitude}&radius=5&page=${page}&limit=10`;
 
       if (searchQuery) {
         url += `&search=${encodeURIComponent(searchQuery)}`;
@@ -207,6 +212,7 @@ export default function NearbyProductsScreen() {
       setLoading(false);
       setLoadingMore(false);
       setRefreshing(false);
+      setInitialFetch(false); // Mark initial fetch as complete
     }
   };
 
@@ -228,39 +234,44 @@ export default function NearbyProductsScreen() {
 
   const renderProduct = ({ item }: { item: Product }) => (
     <Card style={[styles.productCard, isDark && styles.cardDark]}>
-      <View style={styles.productContent}>
-        <Image
-          source={
-            item.images?.[0]
-              ? { uri: item.images[0] }
-              : require("@/assets/images/adaptive-icon.png")
-          }
-          style={styles.productImage}
-        />
-        <View style={styles.productDetails}>
-          <Text
-            style={[styles.productName, isDark && styles.textLight]}
-            numberOfLines={1}
-          >
-            {item.name}
-          </Text>
-          <Text style={styles.merchantName} numberOfLines={1}>
-            {item.merchantName}
-          </Text>
-          <View style={styles.priceContainer}>
-            <IndianRupee size={16} color={theme.colors.primary} />
-            <Text style={[styles.productPrice, isDark && styles.textLight]}>
-              {item.price.toLocaleString("en-IN")}
+      <TouchableOpacity
+        onPress={() => router.push(`/product/${item.id}`)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.productContent}>
+          <Image
+            source={
+              item.images?.[0]
+                ? { uri: item.images[0] }
+                : require("@/assets/images/adaptive-icon.png")
+            }
+            style={styles.productImage}
+          />
+          <View style={styles.productDetails}>
+            <Text
+              style={[styles.productName, isDark && styles.textLight]}
+              numberOfLines={1}
+            >
+              {item.name}
             </Text>
-          </View>
-          <View style={styles.distanceContainer}>
-            <MapPin size={14} color="#6B6B6B" />
-            <Text style={styles.distanceText}>
-              {item.distance.toFixed(1)} km away
+            <Text style={styles.merchantName} numberOfLines={1}>
+              {item.merchantName}
             </Text>
+            <View style={styles.priceContainer}>
+              <IndianRupee size={16} color={theme.colors.primary} />
+              <Text style={[styles.productPrice, isDark && styles.textLight]}>
+                {item.price.toLocaleString("en-IN")}
+              </Text>
+            </View>
+            <View style={styles.distanceContainer}>
+              <MapPin size={14} color="#6B6B6B" />
+              <Text style={styles.distanceText}>
+                {item.distance.toFixed(1)} km away
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Card>
   );
 
@@ -270,6 +281,59 @@ export default function NearbyProductsScreen() {
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={theme.colors.primary} />
       </View>
+    );
+  };
+
+  // Determine what to render in the main content area
+  const renderContent = () => {
+    if (locationError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{locationError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={checkLocationPermission}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Finding products near you...</Text>
+        </View>
+      );
+    }
+
+    if (products.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Store size={48} color="#AFAFAF" />
+          <Text style={styles.emptyText}>No products found nearby</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <FlashList
+        data={products}
+        renderItem={renderProduct}
+        estimatedItemSize={200}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+        contentContainerStyle={styles.listContent}
+      />
     );
   };
 
@@ -290,13 +354,11 @@ export default function NearbyProductsScreen() {
             onPress={updateCurrentLocation}
             disabled={updatingLocation}
           >
-            <Navigation size={20} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.storeButton}
-            onPress={() => router.push("/merchants")}
-          >
-            <Store size={20} color={theme.colors.primary} />
+            {updatingLocation ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Navigation size={20} color={theme.colors.primary} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -328,7 +390,10 @@ export default function NearbyProductsScreen() {
                 styles.categoryChip,
                 selectedCategory === item && styles.selectedCategoryChip,
               ]}
-              textStyle={styles.categoryChipText}
+              textStyle={[
+                styles.categoryChipText,
+                selectedCategory === item && styles.selectedCategoryChipText,
+              ]}
             >
               {item}
             </Chip>
@@ -337,39 +402,7 @@ export default function NearbyProductsScreen() {
         />
       </View>
 
-      {locationError ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{locationError}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={checkLocationPermission}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      ) : products.length > 0 ? (
-        <FlashList
-          data={products}
-          renderItem={renderProduct}
-          estimatedItemSize={200}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-          contentContainerStyle={styles.listContent}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Store size={48} color="#AFAFAF" />
-          <Text style={styles.emptyText}>No products found nearby</Text>
-        </View>
-      )}
+      {renderContent()}
     </SafeAreaView>
   );
 }
@@ -436,13 +469,22 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primaryContainer,
   },
   categoryChipText: {
+    color: theme.colors.onSecondaryContainer,
+  },
+  selectedCategoryChipText: {
     color: theme.colors.primary,
+    fontFamily: "Inter-Medium",
   },
   productCard: {
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   cardDark: {
     backgroundColor: "#1E1E1E",
@@ -460,6 +502,7 @@ const styles = StyleSheet.create({
   productDetails: {
     flex: 1,
     marginLeft: 12,
+    justifyContent: "space-between",
   },
   productName: {
     fontFamily: "Inter-SemiBold",
@@ -499,6 +542,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  loadingText: {
+    fontFamily: "Inter-Regular",
+    fontSize: 16,
+    color: "#6B6B6B",
+    marginTop: 12,
+  },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
@@ -517,6 +566,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
+    marginTop: 16,
   },
   retryButtonText: {
     fontFamily: "Inter-Medium",

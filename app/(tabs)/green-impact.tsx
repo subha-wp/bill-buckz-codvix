@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -7,6 +6,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -34,11 +34,28 @@ export default function GreenImpactScreen() {
 
   const fetchImpactData = async () => {
     try {
+      // Fetch invoices to calculate impact
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_REST_API}/api/green-impact/${user.id}`
+        `${process.env.EXPO_PUBLIC_REST_API}/api/expo/invoices?userId=${user.id}&limit=1000`
       );
       const data = await response.json();
-      setImpact(data);
+
+      // Calculate impact based on invoice count
+      const totalInvoices = data.totalInvoices || 0;
+      const treesPlanted = Math.floor(totalInvoices / 10); // 1 tree per 10 invoices
+
+      // Calculate environmental impact
+      // Each tree absorbs about 22kg CO2 annually
+      const co2Reduced = treesPlanted * 22;
+
+      // Each tree saves about 100L of water annually through reduced runoff
+      const waterSaved = treesPlanted * 100;
+
+      setImpact({
+        treesPlanted,
+        co2Reduced,
+        waterSaved,
+      });
     } catch (error) {
       console.error("Error fetching impact data:", error);
     }
@@ -47,7 +64,9 @@ export default function GreenImpactScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `I've helped plant ${impact.treesPlanted} trees and reduced ${impact.co2Reduced}kg of CO2 through my sustainable shopping! Join me on BillBuckz to make a difference. 🌱`,
+        message: `I've helped plant ${impact.treesPlanted} trees and reduced ${impact.co2Reduced}kg of CO2 through my shopping invoices! 🌱
+  
+  Join me on BillBuckz to make a difference: https://play.google.com/store/apps/details?id=com.devcodersubha.billbucks&pcampaignid=web_share`,
       });
     } catch (error) {
       console.error(error);
@@ -140,7 +159,7 @@ export default function GreenImpactScreen() {
               1
             </Text>
             <Text style={[styles.stepText, isDark && styles.textLight]}>
-              For every ₹1000 spent, we plant one tree
+              For every 10 bills uploaded, we plant one tree
             </Text>
           </View>
           <View style={styles.howItWorksStep}>

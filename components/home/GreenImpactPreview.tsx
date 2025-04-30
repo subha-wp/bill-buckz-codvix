@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Leaf, TreePine, Cloud, Droplets } from "lucide-react-native";
@@ -6,20 +6,50 @@ import { Card } from "react-native-paper";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { theme } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 
-interface GreenImpactPreviewProps {
-  impact: {
-    treesPlanted: number;
-    co2Reduced: number;
-    waterSaved: number;
-    invoicesUntilNextTree: number;
-  };
-}
-
-export function GreenImpactPreview({ impact }: GreenImpactPreviewProps) {
+export function GreenImpactPreview() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const isDark = colorScheme === "dark";
+  const { user } = useAuth();
+
+  const [impact, setImpact] = useState({
+    treesPlanted: 0,
+    co2Reduced: 0,
+    waterSaved: 0,
+    invoicesUntilNextTree: 10,
+  });
+
+  useEffect(() => {
+    fetchImpactData();
+  }, []);
+
+  const fetchImpactData = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_REST_API}/api/expo/invoices?userId=${user.id}&limit=1000`
+      );
+      const data = await response.json();
+
+      const totalInvoices = data.totalInvoices || 0;
+      const treesPlanted = Math.floor(totalInvoices / 10);
+      const invoicesUntilNextTree = 10 - (totalInvoices % 10);
+
+      // Calculate environmental impact
+      const co2Reduced = treesPlanted * 22; // 22kg CO2 per tree annually
+      const waterSaved = treesPlanted * 100; // 100L water saved per tree annually
+
+      setImpact({
+        treesPlanted,
+        co2Reduced,
+        waterSaved,
+        invoicesUntilNextTree,
+      });
+    } catch (error) {
+      console.error("Error fetching impact data:", error);
+    }
+  };
 
   return (
     <Card style={[styles.container, isDark && styles.containerDark]}>

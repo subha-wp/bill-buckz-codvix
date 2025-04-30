@@ -1,47 +1,114 @@
 // @ts-nocheck
 import messaging from "@react-native-firebase/messaging";
-import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform, Alert, Linking } from "react-native";
+import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { theme } from "@/constants/theme";
 
-// Request notification permissions
+// Configure notification behavior
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.MAX, // Maximum priority
+  }),
+});
+
 export const requestUserPermission = async () => {
   try {
-    if (!Device.isDevice) return false;
-
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-    if (enabled) {
-      console.log("Authorization status:", authStatus);
-
-      // Get FCM token
-      const token = await messaging().getToken();
-      if (token) await registerDeviceForNotifications(token);
-
-      return true;
+    if (!Device.isDevice) {
+      return false; // Exit if running in simulator/emulator
     }
 
-    console.log("User notification permission denied");
-    return false;
+    // Configure notification channel with high importance and visibility
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: theme.colors.primary,
+        lockscreenVisibility:
+          Notifications.AndroidNotificationVisibility.PUBLIC,
+        showBadge: true,
+      });
+
+      // Create a high priority channel for critical notifications
+      await Notifications.setNotificationChannelAsync("high_priority", {
+        name: "Important Notifications",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: theme.colors.primary,
+        lockscreenVisibility:
+          Notifications.AndroidNotificationVisibility.PUBLIC,
+        showBadge: true,
+      });
+    }
+
+    // Request permissions
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+          allowAnnouncements: true,
+        },
+      });
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") {
+      Alert.alert(
+        "Enable Notifications",
+        "Please enable notifications to receive important updates",
+        [
+          {
+            text: "Open Settings",
+            onPress: () => Linking.openSettings(),
+          },
+          {
+            text: "Retry",
+            onPress: () => requestUserPermission(),
+          },
+        ]
+      );
+      return false;
+    }
+
+    // Get FCM token
+    if (Platform.OS !== "web") {
+      const token = await messaging().getToken();
+      if (token) {
+        await registerDeviceForNotifications(token);
+      }
+    }
+
+    return true;
   } catch (error) {
-    console.error("Permission error:", error);
+    console.error("Error requesting notification permission:", error);
     return false;
   }
 };
 
-// Register device token with your backend
 const registerDeviceForNotifications = async (token: string) => {
   try {
     const storedToken = await AsyncStorage.getItem("fcmToken");
+
+    // Only send to server if token has changed
     if (storedToken !== token) {
-      await fetch(
+      const response = await fetch(
         `${process.env.EXPO_PUBLIC_REST_API}/api/register-push-token`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             token,
             platform: Platform.OS,
@@ -54,90 +121,105 @@ const registerDeviceForNotifications = async (token: string) => {
           }),
         }
       );
-      await AsyncStorage.setItem("fcmToken", token);
-      console.log("FCM Token registered:", token);
+
+      if (response.ok) {
+        await AsyncStorage.setItem("fcmToken", token);
+        
+      }
     }
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Error registering device:", error);
   }
 };
 
-// Create notification channels for Android
-export const createNotificationChannel = () => {
-  if (Platform.OS === "android") {
-    // Default channel
-    messaging().createChannel({
-      id: "default-channel",
-      name: "Default Channel",
-      description: "Default notifications channel",
-      importance: messaging.Android.Importance.HIGH,
-      vibration: true,
-      sound: "default",
-    });
-
-    // Channel for notifications with images
-    messaging().createChannel({
-      id: "high-priority",
-      name: "High Priority",
-      description: "Channel for important notifications with images",
-      importance: messaging.Android.Importance.MAX,
-      vibration: true,
-      sound: "default",
-    });
-  }
-};
-
-// Set up notification listeners
 export const setupNotificationListeners = () => {
-  // Handle notifications when app is in foreground
-  const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
-    // Firebase will automatically display the notification when in foreground
-    // No need to manually create a notification
-  });
-
-  // Handle notification open events
-  const unsubscribeNotificationOpen = messaging().onNotificationOpenedApp(
-    (remoteMessage) => {
-      handleNotificationPress(remoteMessage.data);
+  // Foreground notification handler
+  const foregroundSubscription = Notifications.addNotificationReceivedListener(
+    (notification) => {
+      // You can handle foreground notifications differently if needed
     }
   );
 
-  // Check if app was opened from a notification
-  messaging()
-    .getInitialNotification()
-    .then((remoteMessage) => {
-      if (remoteMessage) {
-        console.log(
-          "App opened from quit state by notification:",
-          remoteMessage
-        );
-        handleNotificationPress(remoteMessage.data);
-      }
+  // Background/quit state notification handler
+  const backgroundSubscription =
+    Notifications.addNotificationResponseReceivedListener((response) => {
+      const { data } = response.notification.request.content;
+      handleNotificationPress(data);
     });
 
-  // Handle token refresh
-  const unsubscribeTokenRefresh = messaging().onTokenRefresh((token) => {
-    registerDeviceForNotifications(token);
+  // FCM background message handler
+  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+    // This ensures proper heads-up display in the background
+    if (remoteMessage.notification) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: remoteMessage.notification.title,
+          body: remoteMessage.notification.body,
+          data: remoteMessage.data,
+        },
+        trigger: null,
+      });
+    }
   });
 
-  // Return cleanup function
+  // FCM foreground message handler
+  const messageSubscription = messaging().onMessage(async (remoteMessage) => {
+    if (remoteMessage.notification) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: remoteMessage.notification.title,
+          body: remoteMessage.notification.body,
+          data: remoteMessage.data,
+          sound: "custom_notification.wav",
+          priority: "max",
+          android: {
+            channelId: "high_priority",
+            smallIcon: "./assets/images/adaptive-icon.png", // Reference to the icon resource name
+            priority: "max",
+            showWhen: true,
+          },
+        },
+        trigger: null,
+      });
+    }
+  });
+
+  // Cleanup function
   return () => {
-    unsubscribeForeground();
-    unsubscribeNotificationOpen();
-    unsubscribeTokenRefresh();
+    foregroundSubscription.remove();
+    backgroundSubscription.remove();
+    messageSubscription();
   };
 };
 
-// Handle notification press actions
+// // Function to send local notifications with high priority
+export const sendHighPriorityNotification = async (
+  title: string,
+  body: string,
+  data: any = {}
+) => {
+  return await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      data,
+      priority: "max",
+      // For Android, specify the channel
+      android: {
+        channelId: "high_priority",
+        smallIcon: "./assets/images/adaptive-icon.png",
+        priority: "max",
+      },
+    },
+    trigger: null, // Send immediately
+  });
+};
+
 const handleNotificationPress = (data: any) => {
+  // Handle notification press based on data
   if (data?.type === "cashback") {
-    // Handle cashback notification
-    // Navigation logic here
+    // Navigate to cashback screen
   } else if (data?.type === "bill") {
-    // Handle bill notification
-    // Navigation logic here
-  } else {
-    console.log("Handling general notification");
-    // Default handling
+    // Navigate to bill details
   }
 };

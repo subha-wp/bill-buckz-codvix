@@ -19,6 +19,7 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { BalanceCard } from "@/components/shared/BalanceCard";
 import { BillCard } from "@/components/shared/BillCard";
 import { useAuth } from "@/context/AuthContext";
+import { GreenImpactPreview } from "@/components/home/GreenImpactPreview";
 
 export default function HomeScreen() {
   const { colorScheme } = useTheme();
@@ -76,6 +77,8 @@ export default function HomeScreen() {
           balance={walletData.availableBalance}
           label="Available Cashback"
         />
+
+        <GreenImpactPreview />
 
         {/* Recent Bills */}
         <View style={styles.section}>
