@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { TextInput, Card } from "react-native-paper";
-import { Search, MapPin, Star } from "lucide-react-native";
-import { useTheme } from "@/context/ThemeContext";
+import { Search, QrCode } from "lucide-react-native";
 import { theme } from "@/constants/theme";
+import QRScanner from "./QRScanner";
 
 interface Merchant {
   id: string;
@@ -33,6 +34,7 @@ export function MerchantSearch({ onSelect, isDark }: MerchantSearchProps) {
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(
     null
   );
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     const searchMerchants = async () => {
@@ -50,7 +52,6 @@ export function MerchantSearch({ onSelect, isDark }: MerchantSearchProps) {
         );
         const data = await response.json();
 
-        // Safety check for format
         const merchantsArray = Array.isArray(data?.merchants)
           ? data.merchants
           : Array.isArray(data)
@@ -76,21 +77,53 @@ export function MerchantSearch({ onSelect, isDark }: MerchantSearchProps) {
     onSelect(merchant);
   };
 
+  const handleQRScan = async (data: string) => {
+    try {
+      setShowScanner(false);
+      setLoading(true);
+
+      // Parse QR data
+      const qrData = JSON.parse(data);
+
+      // Search merchant by phone number from QR
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_REST_API}/api/expo/merchants/search?q=${qrData.phone}`
+      );
+      const result = await response.json();
+
+      if (result.merchants?.[0]) {
+        handleSelect(result.merchants[0]);
+      }
+    } catch (error) {
+      console.error("Error processing QR code:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <TextInput
-        mode="outlined"
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search for merchant"
-        left={
-          <TextInput.Icon
-            icon={() => <Search size={20} color={theme.colors.primary} />}
-          />
-        }
-        style={styles.input}
-        outlineStyle={styles.inputOutline}
-      />
+      <View style={styles.searchContainer}>
+        <TextInput
+          mode="outlined"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search for merchant"
+          left={
+            <TextInput.Icon
+              icon={() => <Search size={20} color={theme.colors.primary} />}
+            />
+          }
+          style={styles.input}
+          outlineStyle={styles.inputOutline}
+        />
+        <TouchableOpacity
+          style={[styles.scanButton, isDark && styles.scanButtonDark]}
+          onPress={() => setShowScanner(true)}
+        >
+          <QrCode size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
 
       {loading && (
         <View style={styles.loadingContainer}>
@@ -168,6 +201,17 @@ export function MerchantSearch({ onSelect, isDark }: MerchantSearchProps) {
           </View>
         </Card>
       )}
+
+      <Modal
+        visible={showScanner}
+        animationType="slide"
+        onRequestClose={() => setShowScanner(false)}
+      >
+        <QRScanner
+          onScan={handleQRScan}
+          onClose={() => setShowScanner(false)}
+        />
+      </Modal>
     </View>
   );
 }
@@ -176,11 +220,28 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   input: {
+    flex: 1,
     backgroundColor: "#FFFFFF",
   },
   inputOutline: {
     borderRadius: 8,
+  },
+  scanButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: theme.colors.primaryContainer,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scanButtonDark: {
+    backgroundColor: "#2A2A2A",
   },
   loadingContainer: {
     padding: 16,
