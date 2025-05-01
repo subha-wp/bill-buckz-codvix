@@ -23,7 +23,7 @@ import {
   Search,
   Store,
   IndianRupee,
-  Navigation,
+  LocateFixed,
 } from "lucide-react-native";
 import { theme } from "@/constants/theme";
 
@@ -247,6 +247,7 @@ export default function NearbyProductsScreen() {
             }
             style={styles.productImage}
           />
+
           <View style={styles.productDetails}>
             <Text
               style={[styles.productName, isDark && styles.textLight]}
@@ -257,11 +258,14 @@ export default function NearbyProductsScreen() {
             <Text style={styles.merchantName} numberOfLines={1}>
               {item.merchantName}
             </Text>
-            <View style={styles.priceContainer}>
-              <IndianRupee size={16} color={theme.colors.primary} />
-              <Text style={[styles.productPrice, isDark && styles.textLight]}>
-                {item.price.toLocaleString("en-IN")}
-              </Text>
+            <View style={styles.productPriceCategory}>
+              <View style={styles.priceContainer}>
+                <IndianRupee size={16} color={theme.colors.primary} />
+                <Text style={[styles.productPrice, isDark && styles.textLight]}>
+                  {item.price.toLocaleString("en-IN")}
+                </Text>
+              </View>
+              <Text style={styles.productCategory}>{item.category}</Text>
             </View>
             <View style={styles.distanceContainer}>
               <MapPin size={14} color="#6B6B6B" />
@@ -357,7 +361,7 @@ export default function NearbyProductsScreen() {
             {updatingLocation ? (
               <ActivityIndicator size="small" color={theme.colors.primary} />
             ) : (
-              <Navigation size={20} color={theme.colors.primary} />
+              <LocateFixed size={20} color={theme.colors.primary} />
             )}
           </TouchableOpacity>
         </View>
@@ -465,6 +469,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     backgroundColor: theme.colors.secondaryContainer,
   },
+
   selectedCategoryChip: {
     backgroundColor: theme.colors.primaryContainer,
   },
@@ -492,6 +497,20 @@ const styles = StyleSheet.create({
   productContent: {
     flexDirection: "row",
     padding: 12,
+  },
+  productPriceCategory: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  productCategory: {
+    marginLeft: 12,
+    padding: 3,
+    textAlign: "center",
+    backgroundColor: theme.colors.secondaryContainer,
+    borderRadius: 10,
+    fontSize: 12,
+    paddingHorizontal: 12,
   },
   productImage: {
     width: 80,

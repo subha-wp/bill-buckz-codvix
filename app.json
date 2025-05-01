@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Bill Buckz",
-    "slug": "bill-buckz-codvix",
-    "version": "1.0.3",
+    "slug": "bill-bucks-x",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -32,6 +32,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "notification": {
+        "icon": "./assets/images/adaptive-icon.png",
+        "color": "#ffffff"
+      },
+      "versionCode": 13,
       "package": "com.devcodersubha.billbucks",
       "googleServicesFile": "./google-services.json",
       "permissions": [
@@ -46,7 +51,16 @@
         "READ_CONTACTS",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "softwareKeyboardLayoutMode": "pan",
+      "windowSoftInputMode": "adjustResize",
+      "navigationBarColor": "transparent",
+      "statusBarColor": "transparent",
+      "windowTranslucentStatus": true,
+      "windowTranslucentNavigation": true,
+      "androidWindowEdgeToEdge": true,
+      "androidWindowLayoutInDisplayCutoutMode": "never",
+      "useNextNotificationsApi": true
     },
     "web": {
       "bundler": "metro",
@@ -61,7 +75,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "b66b111e-248c-4f68-aabb-2b22ce5eb6ad"
+        "projectId": "8591f423-2e01-4a7b-9488-2b5801c6c3e7"
       }
     }
   }
