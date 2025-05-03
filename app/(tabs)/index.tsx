@@ -21,6 +21,8 @@ import { BillCard } from "@/components/shared/BillCard";
 import { useAuth } from "@/context/AuthContext";
 import { GreenImpactPreview } from "@/components/home/GreenImpactPreview";
 import { WeeklyChallenges } from "../../components/home/WeeklyChallenges";
+import { SaveEarthBanner } from "@/components/home/SaveEarthBanner";
+import { EnhancedGreenImpact } from "@/components/home/enhanced-green-impact";
 
 export default function HomeScreen() {
   const { colorScheme } = useTheme();
@@ -79,6 +81,7 @@ export default function HomeScreen() {
           label="Available Cashback"
         />
         <WeeklyChallenges />
+        <SaveEarthBanner />
         <GreenImpactPreview />
 
         {/* Recent Bills */}

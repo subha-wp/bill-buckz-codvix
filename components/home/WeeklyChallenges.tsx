@@ -1,7 +1,14 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+"use client";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useRouter } from "expo-router";
-import { Trophy, Gift, ChevronRight } from "lucide-react-native";
+import { Trophy, Gift, ArrowRight } from "lucide-react-native";
 import { Card } from "react-native-paper";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
@@ -37,10 +44,15 @@ export function WeeklyChallenges() {
   const isDark = colorScheme === "dark";
 
   return (
-    <Card style={[styles.container, isDark && styles.containerDark]}>
+    <Card
+      style={[styles.container, isDark && styles.containerDark]}
+      elevation={2}
+    >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Trophy size={20} color="#FFD700" />
+          <View style={styles.iconContainer}>
+            <Trophy size={18} color="#FFD700" />
+          </View>
           <Text style={[styles.headerTitle, isDark && styles.textLight]}>
             Weekly Challenges
           </Text>
@@ -53,44 +65,65 @@ export function WeeklyChallenges() {
           onPress={() => router.push("/leaderboard")}
         >
           <Text style={styles.viewAllText}>View All</Text>
-          <ChevronRight size={16} color="#0A84FF" />
+          <ArrowRight size={14} color="#0A84FF" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.prizesList}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {weeklyPrizes.map((prize, index) => (
           <TouchableOpacity
             key={prize.id}
             onPress={() => router.push("/leaderboard")}
+            style={styles.prizeCardWrapper}
           >
             <LinearGradient
-              colors={
-                index === 0
-                  ? ["rgba(255, 215, 0, 0.1)", "rgba(255, 165, 0, 0.1)"]
-                  : [
-                      isDark ? "#1E1E1E" : "#FFFFFF",
-                      isDark ? "#1E1E1E" : "#FFFFFF",
-                    ]
-              }
-              style={styles.prizeCard}
+              colors={["#fff", "#fff"]}
+              style={[
+                styles.prizeCard,
+                index === 0 && styles.featuredCard,
+                isDark && styles.prizeCardDark,
+              ]}
             >
+              {index === 0 && (
+                <View style={styles.featuredBadge}>
+                  <Text style={styles.featuredText}>Featured</Text>
+                </View>
+              )}
               <Image source={{ uri: prize.image }} style={styles.prizeImage} />
               <View style={styles.prizeInfo}>
-                <Text style={[styles.prizeName, isDark && styles.textLight]}>
+                <Text
+                  style={[
+                    styles.prizeName,
+                    isDark && styles.textLight,
+                    index === 0 && styles.featuredPrizeName,
+                  ]}
+                  numberOfLines={1}
+                >
                   {prize.name}
                 </Text>
                 <View style={styles.prizeRequirement}>
-                  <Gift size={14} color={theme.colors.primary} />
-                  <Text style={styles.requirementText}>
+                  <Gift
+                    size={12}
+                    color={index === 0 ? "#FFD700" : theme.colors.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.requirementText,
+                      index === 0 && styles.featuredRequirementText,
+                    ]}
+                  >
                     Min spend ₹{prize.minSpend.toLocaleString()}
                   </Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={theme.colors.primary} />
             </LinearGradient>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
     </Card>
   );
 }
@@ -98,7 +131,7 @@ export function WeeklyChallenges() {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
   },
   containerDark: {
@@ -109,65 +142,114 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 215, 0, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
   headerTitle: {
     fontFamily: "Inter-SemiBold",
     fontSize: 16,
     color: "#0A0A0A",
-    marginLeft: 8,
     marginRight: 8,
   },
   headerBadge: {
     backgroundColor: "#FF3B30",
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   headerBadgeText: {
     fontFamily: "Inter-Medium",
-    fontSize: 12,
+    fontSize: 10,
     color: "#FFFFFF",
   },
   viewAllButton: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "rgba(10, 132, 255, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   viewAllText: {
     fontFamily: "Inter-Medium",
-    fontSize: 14,
+    fontSize: 13,
     color: "#0A84FF",
     marginRight: 4,
   },
-  prizesList: {
+  scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 20,
+  },
+  prizeCardWrapper: {
+    marginRight: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   prizeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
+    width: 110,
+    borderRadius: 16,
+    overflow: "hidden",
+    padding: 0,
+  },
+  prizeCardDark: {
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 1,
+  },
+  featuredCard: {
+    width: 120,
+    borderWidth: 1,
+    borderColor: "rgba(255, 215, 0, 0.3)",
+  },
+  featuredBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255, 215, 0, 0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
-    marginBottom: 8,
+    zIndex: 1,
+  },
+  featuredText: {
+    fontFamily: "Inter-Medium",
+    fontSize: 10,
+    color: "#000000",
   },
   prizeImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    marginRight: 12,
+    width: "100%",
+    height: 50,
+    objectFit: "contain",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   prizeInfo: {
-    flex: 1,
+    padding: 12,
   },
   prizeName: {
     fontFamily: "Inter-SemiBold",
-    fontSize: 14,
+    fontSize: 10,
     color: "#0A0A0A",
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  featuredPrizeName: {
+    fontSize: 10,
   },
   prizeRequirement: {
     flexDirection: "row",
@@ -175,9 +257,12 @@ const styles = StyleSheet.create({
   },
   requirementText: {
     fontFamily: "Inter-Medium",
-    fontSize: 12,
+    fontSize: 7,
     color: "#6B6B6B",
     marginLeft: 4,
+  },
+  featuredRequirementText: {
+    color: "#8A6D00",
   },
   textLight: {
     color: "#FFFFFF",

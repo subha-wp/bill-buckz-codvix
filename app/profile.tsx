@@ -21,6 +21,7 @@ import {
   Settings,
   Share2,
   ChevronLeft,
+  CreditCard,
 } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { Divider, Switch, Card } from "react-native-paper";
@@ -112,6 +113,29 @@ export default function ProfileScreen() {
               <Text style={styles.editProfileText}>Edit</Text>
             </TouchableOpacity>
           </View>
+        </Card>
+
+        {/* Pay Later Card */}
+        <Card style={[styles.payLaterCard, isDark && styles.cardDark]}>
+          <TouchableOpacity
+            style={styles.payLaterContent}
+            onPress={() => router.push("/paylater")}
+          >
+            <View style={styles.payLaterLeft}>
+              <CreditCard size={24} color={theme.colors.primary} />
+              <View style={styles.payLaterInfo}>
+                <Text
+                  style={[styles.payLaterTitle, isDark && styles.textLight]}
+                >
+                  BillBuckz Pay Later
+                </Text>
+                <Text style={styles.payLaterSubtitle}>
+                  Shop now, pay later with 0% interest
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
         </Card>
 
         {/* Referral Card */}
@@ -346,6 +370,36 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Medium",
     fontSize: 14,
     color: theme.colors.primary,
+  },
+  payLaterCard: {
+    marginBottom: 24,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    elevation: 2,
+  },
+  payLaterContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+  },
+  payLaterLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  payLaterInfo: {
+    marginLeft: 12,
+  },
+  payLaterTitle: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 16,
+    color: "#0A0A0A",
+    marginBottom: 4,
+  },
+  payLaterSubtitle: {
+    fontFamily: "Inter-Regular",
+    fontSize: 14,
+    color: "#6B6B6B",
   },
   referralCard: {
     marginBottom: 24,
