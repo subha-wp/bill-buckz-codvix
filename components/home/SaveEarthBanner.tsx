@@ -12,10 +12,12 @@ import { Leaf, Globe, ArrowRight } from "lucide-react-native";
 import { Card } from "react-native-paper";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 
 export function SaveEarthBanner() {
   const { colorScheme } = useTheme();
   const isDark = colorScheme === "dark";
+  const router = useRouter();
 
   // Animation values
   const leafPosition = useRef(new Animated.Value(0)).current;
@@ -86,11 +88,6 @@ export function SaveEarthBanner() {
             <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
               Small actions today can make a big difference tomorrow
             </Text>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Take Action</Text>
-              <ArrowRight size={16} color="#FFFFFF" />
-            </TouchableOpacity>
           </View>
 
           <View style={styles.animationContainer}>
@@ -100,7 +97,7 @@ export function SaveEarthBanner() {
                 { transform: [{ translateX: leafTranslateX }] },
               ]}
             >
-              <Leaf size={24} color={isDark ? "#4CAF50" : "#2E7D32"} />
+              <Leaf size={20} color={isDark ? "#4CAF50" : "#2E7D32"} />
             </Animated.View>
 
             <Animated.View
@@ -109,7 +106,7 @@ export function SaveEarthBanner() {
                 { transform: [{ rotate: globeRotate }] },
               ]}
             >
-              <Globe size={60} color={isDark ? "#64B5F6" : "#1976D2"} />
+              <Globe size={35} color={isDark ? "#64B5F6" : "#1976D2"} />
             </Animated.View>
           </View>
         </View>
@@ -166,7 +163,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: "row",
-    padding: 20,
+    padding: 14,
     alignItems: "center",
   },
   textSection: {
@@ -176,7 +173,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   title: {
     fontFamily: "Inter-Bold",
@@ -189,7 +186,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: "#F44336",
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 10,
   },
@@ -202,37 +199,23 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Medium",
     fontSize: 14,
     color: "#1B5E20",
-    marginBottom: 16,
+    marginBottom: 4,
     opacity: 0.8,
   },
   subtitleDark: {
     color: "#A5D6A7",
   },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#4CAF50",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    alignSelf: "flex-start",
-    gap: 8,
-  },
-  actionButtonText: {
-    fontFamily: "Inter-SemiBold",
-    fontSize: 14,
-    color: "#FFFFFF",
-  },
+
   animationContainer: {
-    width: 100,
-    height: 100,
+    width: 50,
+    height: 50,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
   },
   leafContainer: {
     position: "absolute",
-    top: 10,
+    top: -5,
     zIndex: 2,
   },
   globeContainer: {
@@ -243,7 +226,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     backgroundColor: "rgba(0, 0, 0, 0.05)",
-    paddingVertical: 12,
+    paddingVertical: 4,
     paddingHorizontal: 20,
   },
   statItem: {

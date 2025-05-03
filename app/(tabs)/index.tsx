@@ -19,7 +19,6 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { BalanceCard } from "@/components/shared/BalanceCard";
 import { BillCard } from "@/components/shared/BillCard";
 import { useAuth } from "@/context/AuthContext";
-import { GreenImpactPreview } from "@/components/home/GreenImpactPreview";
 import { WeeklyChallenges } from "../../components/home/WeeklyChallenges";
 import { SaveEarthBanner } from "@/components/home/SaveEarthBanner";
 import { EnhancedGreenImpact } from "@/components/home/enhanced-green-impact";
@@ -82,7 +81,7 @@ export default function HomeScreen() {
         />
         <WeeklyChallenges />
         <SaveEarthBanner />
-        <GreenImpactPreview />
+        <EnhancedGreenImpact />
 
         {/* Recent Bills */}
         <View style={styles.section}>

@@ -10,10 +10,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Leaf, TreePine, Cloud, Droplets, Share2 } from "lucide-react-native";
+import {
+  Leaf,
+  TreePine,
+  Cloud,
+  Droplets,
+  Share2,
+  Receipt,
+  CircleHelp as HelpCircle,
+  ArrowUp,
+  Sparkles,
+} from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Card, Button } from "react-native-paper";
+import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/constants/theme";
 
@@ -21,11 +32,17 @@ export default function GreenImpactScreen() {
   const { colorScheme } = useTheme();
   const isDark = colorScheme === "dark";
   const { user } = useAuth();
+  const router = useRouter();
 
   const [impact, setImpact] = useState({
     treesPlanted: 0,
     co2Reduced: 0,
     waterSaved: 0,
+    totalInvoices: 0,
+    rank: 0,
+    totalParticipants: 0,
+    carbonFootprint: 0,
+    energySaved: 0,
   });
 
   useEffect(() => {
@@ -34,27 +51,29 @@ export default function GreenImpactScreen() {
 
   const fetchImpactData = async () => {
     try {
-      // Fetch invoices to calculate impact
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_REST_API}/api/expo/invoices?userId=${user.id}&limit=1000`
       );
       const data = await response.json();
 
-      // Calculate impact based on invoice count
       const totalInvoices = data.totalInvoices || 0;
-      const treesPlanted = Math.floor(totalInvoices / 10); // 1 tree per 10 invoices
+      const treesPlanted = Math.floor(totalInvoices / 10);
 
       // Calculate environmental impact
-      // Each tree absorbs about 22kg CO2 annually
       const co2Reduced = treesPlanted * 22;
-
-      // Each tree saves about 100L of water annually through reduced runoff
       const waterSaved = treesPlanted * 100;
+      const energySaved = treesPlanted * 50; // kWh per tree annually
+      const carbonFootprint = co2Reduced * 0.5; // Carbon footprint reduction
 
       setImpact({
         treesPlanted,
         co2Reduced,
         waterSaved,
+        totalInvoices,
+        rank: data.rank || 0,
+        totalParticipants: data.totalParticipants || 0,
+        carbonFootprint,
+        energySaved,
       });
     } catch (error) {
       console.error("Error fetching impact data:", error);
@@ -64,9 +83,7 @@ export default function GreenImpactScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `I've helped plant ${impact.treesPlanted} trees and reduced ${impact.co2Reduced}kg of CO2 through my shopping invoices! 🌱
-  
-  Join me on BillBuckz to make a difference: https://play.google.com/store/apps/details?id=com.devcodersubha.billbucks&pcampaignid=web_share`,
+        message: `I've helped plant ${impact.treesPlanted} trees and reduced ${impact.co2Reduced}kg of CO2 through my shopping! Join me on BillBuckz to make a difference while earning cashback. 🌱`,
       });
     } catch (error) {
       console.error(error);
@@ -110,6 +127,29 @@ export default function GreenImpactScreen() {
           </Text>
         </LinearGradient>
 
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push("/upload-invoice")}
+          >
+            <Receipt size={24} color="#FFFFFF" />
+            <Text style={styles.actionButtonText}>Upload Bill</Text>
+            <Text style={styles.actionButtonSubtext}>
+              Help plant more trees
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push("/help")}
+          >
+            <HelpCircle size={24} color="#FFFFFF" />
+            <Text style={styles.actionButtonText}>Learn More</Text>
+            <Text style={styles.actionButtonSubtext}>About our initiative</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Impact Stats */}
         <View style={styles.statsContainer}>
           <Card style={[styles.statCard, isDark && styles.cardDark]}>
@@ -120,6 +160,9 @@ export default function GreenImpactScreen() {
               </Text>
               <Text style={[styles.statValue, isDark && styles.textLight]}>
                 {impact.treesPlanted}
+              </Text>
+              <Text style={styles.statDescription}>
+                Each tree absorbs ~22kg CO₂ annually
               </Text>
             </View>
           </Card>
@@ -133,6 +176,10 @@ export default function GreenImpactScreen() {
               <Text style={[styles.statValue, isDark && styles.textLight]}>
                 {impact.co2Reduced}kg
               </Text>
+              <Text style={styles.statDescription}>
+                Equivalent to {Math.round(impact.co2Reduced / 100)} car trips
+                avoided
+              </Text>
             </View>
           </Card>
 
@@ -145,37 +192,57 @@ export default function GreenImpactScreen() {
               <Text style={[styles.statValue, isDark && styles.textLight]}>
                 {impact.waterSaved}L
               </Text>
+              <Text style={styles.statDescription}>
+                Through reduced water runoff
+              </Text>
             </View>
           </Card>
         </View>
 
-        {/* How It Works */}
-        <Card style={[styles.howItWorksCard, isDark && styles.cardDark]}>
-          <Text style={[styles.howItWorksTitle, isDark && styles.textLight]}>
-            How It Works
+        {/* Additional Impact Stats */}
+        <Card style={[styles.additionalStatsCard, isDark && styles.cardDark]}>
+          <Text
+            style={[styles.additionalStatsTitle, isDark && styles.textLight]}
+          >
+            Additional Impact
           </Text>
-          <View style={styles.howItWorksStep}>
-            <Text style={[styles.stepNumber, isDark && styles.textLight]}>
-              1
+
+          <View style={styles.additionalStat}>
+            <Text
+              style={[styles.additionalStatLabel, isDark && styles.textLight]}
+            >
+              Carbon Footprint Reduction
             </Text>
-            <Text style={[styles.stepText, isDark && styles.textLight]}>
-              For every 10 bills uploaded, we plant one tree
-            </Text>
-          </View>
-          <View style={styles.howItWorksStep}>
-            <Text style={[styles.stepNumber, isDark && styles.textLight]}>
-              2
-            </Text>
-            <Text style={[styles.stepText, isDark && styles.textLight]}>
-              Each tree absorbs about 22kg of CO₂ annually
+            <Text
+              style={[styles.additionalStatValue, isDark && styles.textLight]}
+            >
+              {impact.carbonFootprint.toFixed(1)} tons
             </Text>
           </View>
-          <View style={styles.howItWorksStep}>
-            <Text style={[styles.stepNumber, isDark && styles.textLight]}>
-              3
+
+          <View style={styles.additionalStat}>
+            <Text
+              style={[styles.additionalStatLabel, isDark && styles.textLight]}
+            >
+              Energy Saved
             </Text>
-            <Text style={[styles.stepText, isDark && styles.textLight]}>
-              Trees help conserve water and prevent soil erosion
+            <Text
+              style={[styles.additionalStatValue, isDark && styles.textLight]}
+            >
+              {impact.energySaved} kWh
+            </Text>
+          </View>
+
+          <View style={styles.additionalStat}>
+            <Text
+              style={[styles.additionalStatLabel, isDark && styles.textLight]}
+            >
+              Total Bills Processed
+            </Text>
+            <Text
+              style={[styles.additionalStatValue, isDark && styles.textLight]}
+            >
+              {impact.totalInvoices}
             </Text>
           </View>
         </Card>
@@ -189,14 +256,14 @@ export default function GreenImpactScreen() {
           resizeMode="cover"
         />
 
+        {/* Share Impact */}
         <Button
           mode="contained"
-          style={styles.learnMoreButton}
-          onPress={() => {
-            /* Add navigation to detailed impact page */
-          }}
+          icon={() => <ArrowUp size={18} color="#FFFFFF" />}
+          style={styles.shareImpactButton}
+          onPress={handleShare}
         >
-          Learn More About Our Initiative
+          Share Your Impact
         </Button>
       </ScrollView>
     </SafeAreaView>
@@ -263,64 +330,108 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#FFFFFF",
     opacity: 0.9,
+    marginBottom: 12,
+  },
+  rankInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+  },
+  rankText: {
+    fontFamily: "Inter-Medium",
+    fontSize: 14,
+    color: "#FFFFFF",
+    marginLeft: 8,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 16,
+    color: "#FFFFFF",
+    marginTop: 8,
+  },
+  actionButtonSubtext: {
+    fontFamily: "Inter-Regular",
+    fontSize: 12,
+    color: "#FFFFFF",
+    opacity: 0.8,
+    marginTop: 4,
   },
   statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginBottom: 24,
   },
   statCard: {
-    flex: 1,
-    marginHorizontal: 4,
-    padding: 16,
+    marginBottom: 12,
     borderRadius: 12,
+    backgroundColor: "#FFFFFF",
   },
   cardDark: {
     backgroundColor: "#1E1E1E",
   },
   statContent: {
+    padding: 16,
     alignItems: "center",
   },
   statTitle: {
-    fontFamily: "Inter-Medium",
-    fontSize: 14,
+    fontFamily: "Inter-SemiBold",
+    fontSize: 16,
     color: "#0A0A0A",
     marginTop: 8,
     marginBottom: 4,
   },
   statValue: {
     fontFamily: "Inter-Bold",
-    fontSize: 18,
+    fontSize: 24,
     color: "#0A0A0A",
+    marginBottom: 4,
   },
-  howItWorksCard: {
-    padding: 20,
-    borderRadius: 12,
+  statDescription: {
+    fontFamily: "Inter-Regular",
+    fontSize: 14,
+    color: "#6B6B6B",
+    textAlign: "center",
+  },
+  additionalStatsCard: {
     marginBottom: 24,
+    borderRadius: 12,
+    padding: 16,
   },
-  howItWorksTitle: {
+  additionalStatsTitle: {
     fontFamily: "Inter-Bold",
     fontSize: 18,
     color: "#0A0A0A",
     marginBottom: 16,
   },
-  howItWorksStep: {
+  additionalStat: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
-  stepNumber: {
-    fontFamily: "Inter-Bold",
+  additionalStatLabel: {
+    fontFamily: "Inter-Medium",
     fontSize: 16,
     color: "#0A0A0A",
-    width: 24,
   },
-  stepText: {
-    fontFamily: "Inter-Regular",
-    fontSize: 14,
+  additionalStatValue: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 16,
     color: "#0A0A0A",
-    flex: 1,
-    marginLeft: 8,
   },
   impactImage: {
     width: "100%",
@@ -328,8 +439,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 24,
   },
-  learnMoreButton: {
+  shareImpactButton: {
     marginBottom: 24,
+    borderRadius: 8,
   },
   textLight: {
     color: "#FFFFFF",

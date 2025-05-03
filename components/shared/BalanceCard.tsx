@@ -61,7 +61,7 @@ export function BalanceCard({
 const styles = StyleSheet.create({
   balanceCard: {
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     marginBottom: 24,
   },
   balanceHeader: {
