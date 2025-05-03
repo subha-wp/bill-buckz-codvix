@@ -17,7 +17,7 @@ import { theme } from "@/constants/theme";
 const weeklyPrizes = [
   {
     id: 1,
-    name: "iPhone 15 Pro",
+    name: "iPhone 16 Pro",
     image:
       "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQiPVzda82ZrYDYc730nqGZQRvyetAMlZYzEMxxw4nGF2fUSGaZz_U8HmvOQLF60X6nL5XzAV801EU_a782B0jUHF8hDYRmr0nGepyFTZT5j1yHmTCk5ENFig",
     minSpend: 25000,

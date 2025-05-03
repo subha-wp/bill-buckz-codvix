@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useContext, useEffect, useState } from "react";
 import {
   View,
@@ -22,6 +21,10 @@ import {
   Share2,
   ChevronLeft,
   CreditCard,
+  Wallet,
+  Target,
+  ChartPie as PieChart,
+  Receipt,
 } from "lucide-react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { Divider, Switch, Card } from "react-native-paper";
@@ -114,6 +117,63 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         </Card>
+
+        {/* Smart Budget Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDark && styles.textLight]}>
+            Smart Budget
+          </Text>
+          <Card style={[styles.budgetCard, isDark && styles.cardDark]}>
+            <TouchableOpacity
+              style={styles.budgetItem}
+              onPress={() => router.push("/smart-budget")}
+            >
+              <View style={styles.budgetItemHeader}>
+                <PieChart size={20} color={theme.colors.primary} />
+                <Text
+                  style={[styles.budgetItemTitle, isDark && styles.textLight]}
+                >
+                  Budget Overview
+                </Text>
+              </View>
+              <ChevronRight size={18} color={theme.colors.primary} />
+            </TouchableOpacity>
+
+            <Divider style={styles.budgetDivider} />
+
+            <TouchableOpacity
+              style={styles.budgetItem}
+              onPress={() => router.push("/add-expense")}
+            >
+              <View style={styles.budgetItemHeader}>
+                <Receipt size={20} color={theme.colors.primary} />
+                <Text
+                  style={[styles.budgetItemTitle, isDark && styles.textLight]}
+                >
+                  Add Expense
+                </Text>
+              </View>
+              <ChevronRight size={18} color={theme.colors.primary} />
+            </TouchableOpacity>
+
+            <Divider style={styles.budgetDivider} />
+
+            <TouchableOpacity
+              style={styles.budgetItem}
+              onPress={() => router.push("/my-goals")}
+            >
+              <View style={styles.budgetItemHeader}>
+                <Target size={20} color={theme.colors.primary} />
+                <Text
+                  style={[styles.budgetItemTitle, isDark && styles.textLight]}
+                >
+                  Financial Goals
+                </Text>
+              </View>
+              <ChevronRight size={18} color={theme.colors.primary} />
+            </TouchableOpacity>
+          </Card>
+        </View>
 
         {/* Pay Later Card */}
         <Card style={[styles.payLaterCard, isDark && styles.cardDark]}>
@@ -371,6 +431,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.primary,
   },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 18,
+    color: "#0A0A0A",
+    marginBottom: 12,
+  },
+  budgetCard: {
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    elevation: 2,
+  },
+  budgetItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+  },
+  budgetItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  budgetItemTitle: {
+    fontFamily: "Inter-Medium",
+    fontSize: 16,
+    color: "#0A0A0A",
+    marginLeft: 12,
+  },
+  budgetDivider: {
+    marginLeft: 16,
+  },
   payLaterCard: {
     marginBottom: 24,
     borderRadius: 12,
@@ -455,15 +548,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginLeft: 8,
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontFamily: "Inter-SemiBold",
-    fontSize: 18,
-    color: "#0A0A0A",
-    marginBottom: 12,
-  },
   settingsCard: {
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
@@ -526,21 +610,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B6B6B",
     marginBottom: 8,
-  },
-  appInfoLinks: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  appInfoLink: {
-    fontFamily: "Inter-Medium",
-    fontSize: 14,
-    color: "#0A84FF",
-  },
-  appInfoDot: {
-    fontFamily: "Inter-Regular",
-    fontSize: 14,
-    color: "#6B6B6B",
-    marginHorizontal: 8,
   },
   textLight: {
     color: "#FFFFFF",
