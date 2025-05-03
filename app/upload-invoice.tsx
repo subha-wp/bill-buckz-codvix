@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -28,7 +28,7 @@ import {
   Portal,
   Dialog,
 } from "react-native-paper";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
@@ -41,6 +41,7 @@ export default function UploadInvoiceScreen() {
   const isDark = colorScheme === "dark";
   const router = useRouter();
   const { user } = useAuth();
+  const params = useLocalSearchParams();
 
   const [invoiceType, setInvoiceType] = useState("merchant");
   const [amount, setAmount] = useState("");
@@ -49,6 +50,19 @@ export default function UploadInvoiceScreen() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [error, setError] = useState("");
   const [selectedMerchant, setSelectedMerchant] = useState(null);
+
+  // Handle merchant data from QR scan
+  useEffect(() => {
+    if (params.merchantData) {
+      try {
+        const merchantData = JSON.parse(params.merchantData);
+        setSelectedMerchant(merchantData);
+        setInvoiceType("merchant");
+      } catch (error) {
+        console.error("Error parsing merchant data:", error);
+      }
+    }
+  }, [params.merchantData]);
 
   const handleImagePick = async () => {
     if (Platform.OS !== "web") {
@@ -227,7 +241,9 @@ export default function UploadInvoiceScreen() {
             value={invoiceType}
             onValueChange={(value) => {
               setInvoiceType(value);
-              setSelectedMerchant(null);
+              if (value === "non-merchant") {
+                setSelectedMerchant(null);
+              }
             }}
             buttons={[
               {
@@ -251,7 +267,11 @@ export default function UploadInvoiceScreen() {
             <Text style={[styles.sectionTitle, isDark && styles.textLight]}>
               Select Merchant
             </Text>
-            <MerchantSearch onSelect={setSelectedMerchant} isDark={isDark} />
+            <MerchantSearch
+              onSelect={setSelectedMerchant}
+              isDark={isDark}
+              initialMerchant={selectedMerchant}
+            />
           </View>
         )}
 

@@ -36,7 +36,7 @@
         "icon": "./assets/images/adaptive-icon.png",
         "color": "#ffffff"
       },
-      "versionCode": 13,
+      "versionCode": 15,
       "package": "com.devcodersubha.billbucks",
       "googleServicesFile": "./google-services.json",
       "permissions": [
